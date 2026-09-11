@@ -1,0 +1,108 @@
+body {
+  margin: 0;
+  background: #0b1020;
+  color: white;
+  font-family: Inter, sans-serif;
+}
+
+.app {
+  max-width: 430px;
+  margin: auto;
+  padding: 20px;
+}
+
+.header h1 {
+  font-size: 38px;
+  margin-bottom: 6px;
+}
+
+.header p {
+  color: #9ca3af;
+}
+
+.workout-card {
+  background: linear-gradient(
+    135deg,
+    #111827,
+    #1f2937
+  );
+
+  padding: 24px;
+  border-radius: 24px;
+  margin-top: 20px;
+}
+
+.workout-card button {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  background: white;
+  color: black;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stats-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 12px;
+
+  margin-top: 20px;
+}
+
+.stat-card {
+  background: #111827;
+
+  padding: 20px;
+
+  border-radius: 18px;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.stat-title {
+  color: #9ca3af;
+  margin-top: 8px;
+}
+
+.exercise-card {
+  background: #111827;
+  padding: 20px;
+  border-radius: 18px;
+  margin-bottom: 16px;
+}
+
+.set-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.set-row span {
+  width: 50px;
+}
+
+.set-row input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+.finish-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  margin-top: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
