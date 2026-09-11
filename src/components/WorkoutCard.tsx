@@ -7,15 +7,13 @@ export default function WorkoutCard({
 }: WorkoutCardProps) {
   return (
     <div className="workout-card">
-      <span>Today's Workout</span>
+      <span className="workout-card-eyebrow">Today's Workout</span>
 
-      <h2>Workout A</h2>
+      <h2 className="workout-card-title">Workout A</h2>
 
-      <p>
-        8 Exercises • 65 Minutes
-      </p>
+      <p className="workout-card-meta">8 Exercises &middot; 65 Minutes</p>
 
-      <button onClick={onStartWorkout}>
+      <button className="btn-primary" onClick={onStartWorkout}>
         Start Workout
       </button>
     </div>

@@ -21,55 +21,31 @@ export default function ExerciseCard({
   targetWeight,
   onChange,
 }: Props) {
-  const previousWorkout =
-    getLastExerciseData(name);
+  const previousWorkout = getLastExerciseData(name);
 
-  const cleanWeight = (
-    value: string
-  ) =>
-    String(value || "").replace(
-      /[^0-9.]/g,
-      ""
-    );
+  const cleanWeight = (value: string) =>
+    String(value || "").replace(/[^0-9.]/g, "");
 
   const [sets, setSets] = useState<SetData[]>([
-    {
-      weight: "",
-      reps: "",
-      rpe: "",
-    },
-    {
-      weight: "",
-      reps: "",
-      rpe: "",
-    },
-    {
-      weight: "",
-      reps: "",
-      rpe: "",
-    },
+    { weight: "", reps: "", rpe: "" },
+    { weight: "", reps: "", rpe: "" },
+    { weight: "", reps: "", rpe: "" },
   ]);
 
   useEffect(() => {
     if (previousWorkout?.sets) {
-      const loadedSets =
-        previousWorkout.sets.map(
-          (set: SetData) => ({
-            weight: cleanWeight(
-              set.weight
-            ),
-            reps: set.reps || "",
-            rpe: set.rpe || "",
-          })
-        );
+      const loadedSets = previousWorkout.sets.map(
+        (set: SetData) => ({
+          weight: cleanWeight(set.weight),
+          reps: set.reps || "",
+          rpe: set.rpe || "",
+        })
+      );
 
       setSets(loadedSets);
-
-      onChange(
-        name,
-        loadedSets
-      );
+      onChange(name, loadedSets);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
 
   const updateSet = (
@@ -78,140 +54,80 @@ export default function ExerciseCard({
     value: string
   ) => {
     const updated = [...sets];
-
     updated[index][field] = value;
-
     setSets(updated);
-
     onChange(name, updated);
   };
 
-  const lastWeight =
-    previousWorkout?.sets?.[0]?.weight
-      ? cleanWeight(
-          previousWorkout.sets[0]
-            .weight
-        )
-      : "";
+  const lastWeight = previousWorkout?.sets?.[0]?.weight
+    ? cleanWeight(previousWorkout.sets[0].weight)
+    : "";
 
-  const lastReps =
-    previousWorkout?.sets?.[0]?.reps ||
-    "";
+  const lastReps = previousWorkout?.sets?.[0]?.reps || "";
 
   return (
     <div className="exercise-card">
-      <h3>{name}</h3>
+      <div className="exercise-card-header">
+        <h3 className="exercise-name">{name}</h3>
+      </div>
 
-      <div
-        style={{
-          marginBottom: "12px",
-        }}
-      >
-        <p
-          style={{
-            margin: "4px 0",
-            color: "#facc15",
-          }}
-        >
-          🎯 Target: {targetWeight}kg
-        </p>
+      <div className="exercise-meta-row">
+        <div className="exercise-meta">
+          <span className="exercise-meta-label">Target</span>
+          <span className="exercise-meta-value-target">
+            {targetWeight}kg
+          </span>
+        </div>
 
         {previousWorkout && (
-          <p
-            style={{
-              margin: "4px 0",
-              color: "#22c55e",
-            }}
-          >
-            📈 Last: {lastWeight}kg ×{" "}
-            {lastReps}
-          </p>
+          <div className="exercise-meta">
+            <span className="exercise-meta-label">Last Session</span>
+            <span className="exercise-meta-value-last">
+              {lastWeight}kg &times; {lastReps}
+            </span>
+          </div>
         )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "60px 90px 70px 70px",
-          gap: "8px",
-          marginBottom: "8px",
-          fontSize: "12px",
-          opacity: 0.7,
-          fontWeight: 600,
-        }}
-      >
-        <div></div>
-        <div>Weight</div>
-        <div>Reps</div>
-        <div>RPE</div>
+      <div className="set-table-header">
+        <span></span>
+        <span>Weight</span>
+        <span>Reps</span>
+        <span>RPE</span>
       </div>
 
       {[0, 1, 2].map((index) => (
-        <div
-          key={index}
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "60px 90px 70px 70px",
-            gap: "8px",
-            marginBottom: "8px",
-            alignItems: "center",
-          }}
-        >
-          <span>
-            Set {index + 1}
-          </span>
+        <div key={index} className="set-row">
+          <span className="set-row-label">Set {index + 1}</span>
 
           <input
+            className="set-input"
             type="number"
+            inputMode="decimal"
             step="0.5"
             value={sets[index].weight}
-            placeholder="Weight"
-            style={{
-              width: "90px",
-            }}
+            placeholder="0"
             onChange={(e) =>
-              updateSet(
-                index,
-                "weight",
-                cleanWeight(
-                  e.target.value
-                )
-              )
+              updateSet(index, "weight", cleanWeight(e.target.value))
             }
           />
 
           <input
+            className="set-input"
             type="number"
+            inputMode="numeric"
             value={sets[index].reps}
-            placeholder="Reps"
-            style={{
-              width: "70px",
-            }}
-            onChange={(e) =>
-              updateSet(
-                index,
-                "reps",
-                e.target.value
-              )
-            }
+            placeholder="0"
+            onChange={(e) => updateSet(index, "reps", e.target.value)}
           />
 
           <input
+            className="set-input"
             type="number"
+            inputMode="numeric"
             value={sets[index].rpe}
-            placeholder="RPE"
-            style={{
-              width: "70px",
-            }}
-            onChange={(e) =>
-              updateSet(
-                index,
-                "rpe",
-                e.target.value
-              )
-            }
+            placeholder="0"
+            onChange={(e) => updateSet(index, "rpe", e.target.value)}
           />
         </div>
       ))}

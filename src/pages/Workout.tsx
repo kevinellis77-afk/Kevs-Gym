@@ -22,10 +22,9 @@ export default function Workout({
 }: WorkoutProps) {
   const [notes, setNotes] = useState("");
 
-  const [exerciseData, setExerciseData] =
-    useState<
-      Record<string, SetData[]>
-    >({});
+  const [exerciseData, setExerciseData] = useState<
+    Record<string, SetData[]>
+  >({});
 
   const handleExerciseChange = (
     exerciseName: string,
@@ -38,16 +37,11 @@ export default function Workout({
   };
 
   const handleSaveWorkout = () => {
-    const exercises = Object.entries(
-      exerciseData
-    ).map(([name, sets]) => ({
-      name,
-      sets,
-    }));
-
-    console.log(
-      "Saving exercises:",
-      exercises
+    const exercises = Object.entries(exerciseData).map(
+      ([name, sets]) => ({
+        name,
+        sets,
+      })
     );
 
     saveSession({
@@ -58,95 +52,67 @@ export default function Workout({
       exercises,
     });
 
-    const totalVolume =
-      exercises.reduce(
-        (
-          exerciseTotal,
-          exercise
-        ) =>
-          exerciseTotal +
-          exercise.sets.reduce(
-            (
-              setTotal,
-              set
-            ) =>
-              setTotal +
-              Number(
-                set.weight || 0
-              ) *
-                Number(
-                  set.reps || 0
-                ),
-            0
-          ),
-        0
-      );
-
-    console.log(
-      "Workout Saved"
+    const totalVolume = exercises.reduce(
+      (exerciseTotal, exercise) =>
+        exerciseTotal +
+        exercise.sets.reduce(
+          (setTotal, set) =>
+            setTotal +
+            Number(set.weight || 0) * Number(set.reps || 0),
+          0
+        ),
+      0
     );
 
-    onComplete(
-      totalVolume,
-      exercises.length,
-      65
-    );
+    onComplete(totalVolume, exercises.length, 65);
   };
+
+  const completedCount = Object.keys(exerciseData).length;
+  const totalCount = workoutA.length;
+  const progressPercent = totalCount
+    ? Math.min(100, Math.round((completedCount / totalCount) * 100))
+    : 0;
 
   return (
     <div className="app">
-      <h1>Workout A</h1>
+      <div className="page-header">
+        <h1 className="page-title">Workout A</h1>
+      </div>
 
-      <p>
-        Exercises completed:{" "}
-        {
-          Object.keys(
-            exerciseData
-          ).length
-        }
-      </p>
+      <div className="workout-progress-card">
+        <div className="workout-progress-label">
+          <span>
+            {completedCount} of {totalCount} exercises completed
+          </span>
+          <span>{progressPercent}%</span>
+        </div>
 
-      {workoutA.map(
-        (exercise) => (
-          <ExerciseCard
-            key={exercise.id}
-            name={
-              exercise.name
-            }
-            targetWeight={
-              exercise.targetWeight
-            }
-            onChange={
-              handleExerciseChange
-            }
+        <div className="progress-bar-track">
+          <div
+            className="progress-bar-fill"
+            style={{ width: `${progressPercent}%` }}
           />
-        )
-      )}
+        </div>
+      </div>
+
+      {workoutA.map((exercise) => (
+        <ExerciseCard
+          key={exercise.id}
+          name={exercise.name}
+          targetWeight={exercise.targetWeight}
+          onChange={handleExerciseChange}
+        />
+      ))}
 
       <textarea
+        className="notes-input"
         placeholder="How did today's workout feel?"
         value={notes}
-        onChange={(e) =>
-          setNotes(
-            e.target.value
-          )
-        }
+        onChange={(e) => setNotes(e.target.value)}
         rows={4}
-        style={{
-          width: "100%",
-          marginTop: "20px",
-          padding: "12px",
-          borderRadius:
-            "12px",
-        }}
       />
 
-      <button
-        className="finish-btn"
-        onClick={
-          handleSaveWorkout
-        }
-      >
+      <button className="finish-btn" onClick={handleSaveWorkout}>
         Save Workout
       </button>
     </div>

@@ -11,23 +11,17 @@ export default function StatsGrid({
   stats = [],
 }: StatsGridProps) {
   return (
-    <div
-    className="stats-grid"
-    style={{
-      gridTemplateColumns:
-        "repeat(auto-fit,minmax(140px,1fr))",
-    }}
-  >
+    <div className="stats-grid">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="stat-card"
+          className="mini-stat"
         >
-          <div className="stat-value">
+          <div className="mini-value">
             {stat.value}
           </div>
 
-          <div className="stat-title">
+          <div className="mini-label">
             {stat.label}
           </div>
         </div>

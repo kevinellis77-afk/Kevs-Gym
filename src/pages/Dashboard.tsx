@@ -1,6 +1,4 @@
-import Header from "../components/Header";
 import WorkoutCard from "../components/WorkoutCard";
-import StatsGrid from "../components/StatsGrid";
 
 import { getPersonalRecords } from "../utils/personalRecords";
 import { getNextWorkoutTargets } from "../utils/nextWorkoutTargets";
@@ -16,6 +14,9 @@ import {
   getWeightChange,
 } from "../utils/healthStats";
 
+import ProgressChart from "../components/ProgressChart";
+import { getExerciseHistory } from "../utils/progressChartData";
+
 type DashboardProps = {
   onStartWorkout: () => void;
 };
@@ -23,188 +24,209 @@ type DashboardProps = {
 export default function Dashboard({
   onStartWorkout,
 }: DashboardProps) {
-  const workoutCount =
-    getWorkoutCount();
+  const workoutCount = getWorkoutCount();
+  const streak = getWorkoutStreak();
+  const lastWorkout = getLastWorkoutDaysAgo();
 
-  const streak =
-    getWorkoutStreak();
+  const health = getLatestHealthEntry();
+  const weightChange = getWeightChange();
 
-  const lastWorkout =
-    getLastWorkoutDaysAgo();
+  const personalRecords = getPersonalRecords();
+  const targets = getNextWorkoutTargets();
 
-  const health =
-    getLatestHealthEntry();
+  const legPressHistory = getExerciseHistory("Leg Press");
 
-  const weightChange =
-    getWeightChange();
+  const topRecords = Object.entries(personalRecords)
+    .sort((a, b) => b[1].best - a[1].best)
+    .slice(0, 5);
 
-  const personalRecords =
-    getPersonalRecords();
+  const strengthGain = Object.values(personalRecords).reduce(
+    (total: number, record: any) => total + (record.improvement || 0),
+    0
+  );
 
-  const targets =
-    getNextWorkoutTargets();
+  const weightTrendClass =
+    weightChange < 0 ? "trend-up" : weightChange > 0 ? "trend-down" : "trend-flat";
+
+  const strengthTrendClass =
+    strengthGain > 0 ? "trend-up" : "trend-flat";
 
   return (
     <div className="app">
-      <Header />
+      {/* 1. HERO */}
 
-      <WorkoutCard
-        onStartWorkout={
-          onStartWorkout
-        }
-      />
+      <div className="hero-card">
+        <div className="hero-label">Week 3 Training Block</div>
 
-      <StatsGrid
-        stats={[
-          {
-            label: "Weight",
-            value: health
-              ? `${health.weight}kg`
-              : "--",
-          },
+        <h1 className="hero-title">Kev's Gym</h1>
 
-          {
-            label: "Blood Pressure",
-            value: health
-              ? `${health.systolic}/${health.diastolic}`
-              : "--",
-          },
+        <p className="hero-text">
+          Building strength, improving cardiovascular health and
+          maintaining consistency.
+        </p>
 
-          {
-            label: "Resting HR",
-            value: health
-              ? `${health.restingHr}`
-              : "--",
-          },
+        <div className="hero-metrics">
+          <div>
+            <span className="hero-metric-label">Weight</span>
+            <span className="hero-metric-value">
+              {health ? `${health.weight}kg` : "--"}
+            </span>
+          </div>
 
-          {
-            label: "Workouts",
-            value: workoutCount,
-          },
+          <div>
+            <span className="hero-metric-label">Blood Pressure</span>
+            <span className="hero-metric-value">
+              {health ? `${health.systolic}/${health.diastolic}` : "--"}
+            </span>
+          </div>
 
-          {
-            label: "Weight Change",
-            value:
-              weightChange > 0
-                ? `+${weightChange}kg`
-                : `${weightChange}kg`,
-          },
+          <div>
+            <span className="hero-metric-label">Sessions</span>
+            <span className="hero-metric-value">{workoutCount}</span>
+          </div>
 
-          {
-            label: "Streak",
-            value: `${streak} days`,
-          },
-
-          {
-            label: "Last Workout",
-            value:
-              workoutCount > 0
+          <div>
+            <span className="hero-metric-label">Last Workout</span>
+            <span className="hero-metric-value">
+              {workoutCount > 0
                 ? lastWorkout === 0
                   ? "Today"
-                  : `${lastWorkout}d`
-                : "--",
-          },
-        ]}
-      />
-
-      <div
-        className="exercise-card"
-        style={{
-          marginTop: "20px",
-        }}
-      >
-        <h3>🏆 Personal Records</h3>
-
-        {Object.entries(
-          personalRecords
-        )
-          .sort(
-            (a, b) =>
-              b[1].best -
-              a[1].best
-          )
-          .slice(0, 5)
-          .map(
-            ([exercise, record]) => (
-              <div
-                key={exercise}
-                style={{
-                  display: "flex",
-                  justifyContent:
-                    "space-between",
-                  marginTop: "12px",
-                }}
-              >
-                <span>
-                  {exercise}
-                </span>
-
-                <div>
-                  <strong>
-                    {record.best}kg
-                  </strong>
-
-                  {record.improvement >
-                    0 && (
-                    <span
-                      style={{
-                        marginLeft:
-                          "8px",
-                        color:
-                          "#22c55e",
-                      }}
-                    >
-                      ↑ +
-                      {
-                        record.improvement
-                      }
-                      kg
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          )}
+                  : `${lastWorkout}d ago`
+                : "--"}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div
-        className="exercise-card"
-        style={{
-          marginTop: "20px",
-        }}
-      >
-        <h3>
-          🎯 Next Workout Targets
-        </h3>
+      {/* 2. PROGRESS SUMMARY */}
+
+      <div className="card">
+        <h2 className="section-heading">Progress Summary</h2>
+
+        <div className="summary-grid">
+          <div className="summary-tile">
+            <span className="summary-tile-label">Weight</span>
+            <div className="summary-tile-value">
+              {weightChange > 0 ? `+${weightChange}` : weightChange}kg
+            </div>
+            <span className={weightTrendClass}>
+              {weightChange === 0
+                ? "Stable"
+                : weightChange < 0
+                ? "Trending down"
+                : "Trending up"}
+            </span>
+          </div>
+
+          <div className="summary-tile">
+            <span className="summary-tile-label">Strength</span>
+            <div className="summary-tile-value">
+              {strengthGain > 0 ? `+${strengthGain}` : strengthGain}kg
+            </div>
+            <span className={strengthTrendClass}>
+              {strengthGain > 0 ? "Improving" : "Steady"}
+            </span>
+          </div>
+
+          <div className="summary-tile">
+            <span className="summary-tile-label">Consistency</span>
+            <div className="summary-tile-value">{streak}</div>
+            <span className="trend-flat">
+              {streak === 1 ? "day streak" : "day streak"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <ProgressChart title="Leg Press Progress" data={legPressHistory} />
+
+      {/* 3. TODAY'S WORKOUT */}
+
+      <WorkoutCard onStartWorkout={onStartWorkout} />
+
+      {/* 4. HEALTH SNAPSHOT */}
+
+      <div className="card">
+        <h2 className="section-heading">Health Snapshot</h2>
+
+        <div className="health-grid-display">
+          <div className="health-metric">
+            <span className="health-metric-label">Weight</span>
+            <div className="health-metric-value">
+              {health ? health.weight : "--"}
+              <span className="health-metric-unit">kg</span>
+            </div>
+          </div>
+
+          <div className="health-metric">
+            <span className="health-metric-label">Waist</span>
+            <div className="health-metric-value">
+              {health ? health.waist : "--"}
+              <span className="health-metric-unit">in</span>
+            </div>
+          </div>
+
+          <div className="health-metric">
+            <span className="health-metric-label">Blood Pressure</span>
+            <div className="health-metric-value">
+              {health ? `${health.systolic}/${health.diastolic}` : "--"}
+            </div>
+          </div>
+
+          <div className="health-metric">
+            <span className="health-metric-label">Resting HR</span>
+            <div className="health-metric-value">
+              {health ? health.restingHr : "--"}
+              <span className="health-metric-unit">bpm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. PERSONAL RECORDS */}
+
+      <div className="card">
+        <h2 className="section-heading">Personal Records</h2>
+
+        {topRecords.length === 0 && (
+          <p className="empty-state">
+            Complete a workout to start tracking records.
+          </p>
+        )}
+
+        {topRecords.map(([exercise, record]) => (
+          <div key={exercise} className="list-row">
+            <span className="list-row-label">{exercise}</span>
+
+            <div className="list-row-value">
+              {record.best}kg
+              {record.improvement > 0 && (
+                <span className="gain">+{record.improvement}kg</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 6. NEXT TARGETS */}
+
+      <div className="card">
+        <h2 className="section-heading">Next Workout Targets</h2>
 
         {targets.length === 0 && (
-          <p>
-            Complete a workout to
-            generate targets.
+          <p className="empty-state">
+            Complete a workout to generate targets.
           </p>
         )}
 
         {targets.map((target) => (
-          <div
-            key={target.name}
-            style={{
-              display: "flex",
-              justifyContent:
-                "space-between",
-              marginTop: "12px",
-            }}
-          >
-            <span>
-              {target.name}
-            </span>
+          <div key={target.name} className="list-row">
+            <span className="list-row-label">{target.name}</span>
 
-            <div>
-              {target.lastWeight}kg →{" "}
-              <strong>
-                {target.targetWeight}
-                kg
-              </strong>
-            </div>
+            <span className="list-row-target">
+              {target.lastWeight}kg &rarr;{" "}
+              <strong>{target.targetWeight}kg</strong>
+            </span>
           </div>
         ))}
       </div>

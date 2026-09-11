@@ -33,39 +33,26 @@ export default function Progress({
 
     session.exercises.forEach((exercise: any) => {
       const validSets =
-        exercise.sets?.filter(
-          (set: any) =>
-            Number(set.weight) > 0
-        ) || [];
+        exercise.sets?.filter((set: any) => Number(set.weight) > 0) || [];
 
       if (validSets.length === 0) return;
 
       const maxWeight = Math.max(
-        ...validSets.map((set: any) =>
-          Number(set.weight)
-        )
+        ...validSets.map((set: any) => Number(set.weight))
       );
 
-      const bestSet = validSets.reduce(
-        (best: any, current: any) =>
-          Number(current.weight) >
-          Number(best.weight)
-            ? current
-            : best
+      const bestSet = validSets.reduce((best: any, current: any) =>
+        Number(current.weight) > Number(best.weight) ? current : best
       );
 
       const volume = validSets.reduce(
         (total: number, set: any) =>
-          total +
-          Number(set.weight) *
-            Number(set.reps),
+          total + Number(set.weight) * Number(set.reps),
         0
       );
 
       const estimated1RM = Math.round(
-        Number(bestSet.weight) *
-          (1 +
-            Number(bestSet.reps) / 30)
+        Number(bestSet.weight) * (1 + Number(bestSet.reps) / 30)
       );
 
       if (!exerciseStats[exercise.name]) {
@@ -81,164 +68,131 @@ export default function Progress({
           estimated1RM,
         };
       } else {
-        const stats =
-          exerciseStats[exercise.name];
+        const stats = exerciseStats[exercise.name];
 
-        stats.bestWeight = Math.max(
-          stats.bestWeight,
-          maxWeight
-        );
-
-        stats.bestReps = Math.max(
-          stats.bestReps,
-          Number(bestSet.reps)
-        );
+        stats.bestWeight = Math.max(stats.bestWeight, maxWeight);
+        stats.bestReps = Math.max(stats.bestReps, Number(bestSet.reps));
 
         stats.lastWeight = maxWeight;
-        stats.lastReps = Number(
-          bestSet.reps
-        );
-        stats.lastRpe = Number(
-          bestSet.rpe
-        );
+        stats.lastReps = Number(bestSet.reps);
+        stats.lastRpe = Number(bestSet.rpe);
 
         stats.volume += volume;
 
-        stats.estimated1RM = Math.max(
-          stats.estimated1RM,
-          estimated1RM
-        );
+        stats.estimated1RM = Math.max(stats.estimated1RM, estimated1RM);
 
         stats.sessions += 1;
       }
     });
   });
 
-  const leaderboard = Object.entries(
-    exerciseStats
-  ).sort(
-    (a, b) =>
-      b[1].bestWeight -
-      a[1].bestWeight
+  const leaderboard = Object.entries(exerciseStats).sort(
+    (a, b) => b[1].bestWeight - a[1].bestWeight
   );
 
-  const legPressHistory =
-    getExerciseHistory("Leg Press");
+  const legPressHistory = getExerciseHistory("Leg Press");
 
   return (
     <div className="app">
-      <h1>Progress Tracking</h1>
+      <div className="page-header">
+        <h1 className="page-title">Progress</h1>
+      </div>
 
-      <ProgressChart
-        title="Leg Press Progress"
-        data={legPressHistory}
-      />
+      <ProgressChart title="Leg Press Progress" data={legPressHistory} />
 
-      {leaderboard.map(
-        ([exerciseName, stats]) => {
-          const improvement =
-            stats.bestWeight -
-            stats.firstWeight;
+      <div className="card">
+        <h2 className="section-heading">Strength Rankings</h2>
 
+        {leaderboard.length === 0 && (
+          <p className="empty-state">
+            Log a workout to start building your strength rankings.
+          </p>
+        )}
+
+        {leaderboard.map(([exerciseName, stats], index) => {
+          const improvement = stats.bestWeight - stats.firstWeight;
           const percentage =
             stats.firstWeight > 0
-              ? Math.round(
-                  (improvement /
-                    stats.firstWeight) *
-                    100
-                )
+              ? Math.round((improvement / stats.firstWeight) * 100)
               : 0;
 
           return (
             <div
               key={exerciseName}
-              className="exercise-card"
+              className="card"
+              style={{ marginBottom: index === leaderboard.length - 1 ? 0 : undefined }}
             >
-              <h3>
-                🏆 {exerciseName}
-              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: "10px",
+                }}
+              >
+                <span className="rank-badge">{index + 1}</span>
+                <h3 className="exercise-name">{exerciseName}</h3>
+              </div>
 
-              <p>
-                Personal Record:{" "}
-                {stats.bestWeight}kg ×{" "}
-                {stats.bestReps}
-              </p>
+              <div className="list-row" style={{ borderBottom: "none", paddingTop: 0 }}>
+                <span className="list-row-label">Personal Record</span>
+                <span className="list-row-value">
+                  {stats.bestWeight}kg &times; {stats.bestReps}
+                </span>
+              </div>
 
-              <p>
-                Estimated 1RM:{" "}
-                {stats.estimated1RM}kg
-              </p>
+              <div className="progress-stat-grid">
+                <div className="progress-stat">
+                  <span className="progress-stat-label">Est. 1RM</span>
+                  <div className="progress-stat-value">
+                    {stats.estimated1RM}kg
+                  </div>
+                </div>
 
-              <p>
-                Total Volume:{" "}
-                {stats.volume.toLocaleString()}
-                kg
-              </p>
+                <div className="progress-stat">
+                  <span className="progress-stat-label">Total Volume</span>
+                  <div className="progress-stat-value">
+                    {stats.volume.toLocaleString()}kg
+                  </div>
+                </div>
 
-              <p>
-                Improvement: +
-                {improvement}kg (
-                {percentage}%)
-              </p>
+                <div className="progress-stat">
+                  <span className="progress-stat-label">Improvement</span>
+                  <div className="progress-stat-value">
+                    {improvement > 0 && (
+                      <span className="gain">
+                        +{improvement}kg ({percentage}%)
+                      </span>
+                    )}
+                    {improvement <= 0 && <span>{improvement}kg</span>}
+                  </div>
+                </div>
 
-              <p>
-                Sessions Logged:{" "}
-                {stats.sessions}
-              </p>
+                <div className="progress-stat">
+                  <span className="progress-stat-label">Sessions</span>
+                  <div className="progress-stat-value">
+                    {stats.sessions}
+                  </div>
+                </div>
+              </div>
 
-              <p>
-                Last Session:{" "}
-                {stats.lastWeight}kg ×{" "}
-                {stats.lastReps}
-              </p>
-
-              <p>
-                Last RPE:{" "}
-                {stats.lastRpe}
-              </p>
+              <div
+                className="list-row"
+                style={{ borderTop: "1px solid var(--card-border)", marginTop: "10px" }}
+              >
+                <span className="list-row-label">Last Session</span>
+                <span className="list-row-value">
+                  {stats.lastWeight}kg &times; {stats.lastReps} @ RPE{" "}
+                  {stats.lastRpe}
+                </span>
+              </div>
             </div>
           );
-        }
-      )}
+        })}
+      </div>
 
-      <h2
-        style={{
-          marginTop: "30px",
-        }}
-      >
-        Strength Rankings
-      </h2>
-
-      {leaderboard.map(
-        ([name, stats], index) => (
-          <div
-            key={name}
-            className="exercise-card"
-          >
-            <strong>
-              #{index + 1} {name}
-            </strong>
-
-            <p>
-              Best Weight:{" "}
-              {stats.bestWeight}kg
-            </p>
-
-            <p>
-              Estimated 1RM:{" "}
-              {stats.estimated1RM}kg
-            </p>
-          </div>
-        )
-      )}
-
-<button
-  className="finish-btn"
-  onClick={onBack}
-  style={{ marginTop: "20px" }}
->
-  Back to Dashboard
-</button>
+      <button className="btn-secondary" onClick={onBack}>
+        Back to Dashboard
+      </button>
     </div>
   );
 }
