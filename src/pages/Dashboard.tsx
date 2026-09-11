@@ -1,31 +1,78 @@
 import Header from "../components/Header";
-import StatCard from "../components/StatCard";
+import WorkoutCard from "../components/WorkoutCard";
+import StatsGrid from "../components/StatsGrid";
 
-type Props = {
+import {
+  getWorkoutCount,
+  getWorkoutStreak,
+  getLastWorkoutDaysAgo,
+  getLatestSession,
+} from "../utils/dashboardStats";
+
+type DashboardProps = {
   onStartWorkout: () => void;
+  onViewHistory?: () => void;
 };
 
-export default function Dashboard({ onStartWorkout }: Props) {
+export default function Dashboard({
+  onStartWorkout,
+  onViewHistory,
+}: DashboardProps) {
+  const workoutCount = getWorkoutCount();
+  const streak = getWorkoutStreak();
+  const lastWorkout = getLastWorkoutDaysAgo();
+  const latestSession = getLatestSession();
+
   return (
-    <>
+    <div className="app">
       <Header />
 
-      <div className="workout-card">
-        <h2>Workout A</h2>
+      <WorkoutCard
+        title="Workout A"
+        exercises={8}
+        duration={65}
+        onStart={onStartWorkout}
+      />
 
-        <p>8 Exercises • 65 Minutes</p>
+      <StatsGrid
+        stats={[
+          {
+            label: "Workouts",
+            value: workoutCount,
+          },
+          {
+            label: "Latest Notes",
+            value: latestSession?.notes
+              ? latestSession.notes.substring(0, 12)
+              : "--",
+          },
+          {
+            label: "Last Workout",
+            value:
+              workoutCount > 0
+                ? `${lastWorkout} day${
+                    lastWorkout === 1 ? "" : "s"
+                  } ago`
+                : "--",
+          },
+          {
+            label: "Streak",
+            value: `${streak} day${
+              streak === 1 ? "" : "s"
+            }`,
+          },
+        ]}
+      />
 
-        <button onClick={onStartWorkout}>
-          Start Workout
+      {onViewHistory && (
+        <button
+          className="finish-btn"
+          style={{ marginTop: "20px" }}
+          onClick={onViewHistory}
+        >
+          View Workout History
         </button>
-      </div>
-
-      <div className="stats-grid">
-        <StatCard title="Workouts" value="3" />
-        <StatCard title="Weight" value="17 st" />
-        <StatCard title="BP" value="--" />
-        <StatCard title="Streak" value="2" />
-      </div>
-    </>
+      )}
+    </div>
   );
 }
