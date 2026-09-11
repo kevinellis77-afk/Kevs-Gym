@@ -26,6 +26,13 @@ export default function Workout({
     Record<string, SetData[]>
   >({});
 
+  // Exercises the user has actually edited this session — used only for
+  // the progress bar, so pre-loaded last-session data doesn't show as
+  // "completed" before it's been touched today.
+  const [touchedExercises, setTouchedExercises] = useState<Set<string>>(
+    new Set()
+  );
+
   const handleExerciseChange = (
     exerciseName: string,
     sets: SetData[]
@@ -34,6 +41,15 @@ export default function Workout({
       ...prev,
       [exerciseName]: sets,
     }));
+  };
+
+  const handleExerciseInteract = (exerciseName: string) => {
+    setTouchedExercises((prev) => {
+      if (prev.has(exerciseName)) return prev;
+      const next = new Set(prev);
+      next.add(exerciseName);
+      return next;
+    });
   };
 
   const handleSaveWorkout = () => {
@@ -67,7 +83,7 @@ export default function Workout({
     onComplete(totalVolume, exercises.length, 65);
   };
 
-  const completedCount = Object.keys(exerciseData).length;
+  const completedCount = touchedExercises.size;
   const totalCount = workoutA.length;
   const progressPercent = totalCount
     ? Math.min(100, Math.round((completedCount / totalCount) * 100))
@@ -101,6 +117,7 @@ export default function Workout({
           name={exercise.name}
           targetWeight={exercise.targetWeight}
           onChange={handleExerciseChange}
+          onInteract={handleExerciseInteract}
         />
       ))}
 

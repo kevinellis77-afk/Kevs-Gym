@@ -14,12 +14,17 @@ type Props = {
     exerciseName: string,
     sets: SetData[]
   ) => void;
+  // Fired only when the user actually edits a field for this exercise —
+  // NOT when previous-session data is auto-loaded on mount. Use this
+  // (rather than onChange) to track what the user has touched today.
+  onInteract?: (exerciseName: string) => void;
 };
 
 export default function ExerciseCard({
   name,
   targetWeight,
   onChange,
+  onInteract,
 }: Props) {
   const previousWorkout = getLastExerciseData(name);
 
@@ -57,6 +62,7 @@ export default function ExerciseCard({
     updated[index][field] = value;
     setSets(updated);
     onChange(name, updated);
+    onInteract?.(name);
   };
 
   const lastWeight = previousWorkout?.sets?.[0]?.weight
