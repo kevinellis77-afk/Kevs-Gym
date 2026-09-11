@@ -47,12 +47,19 @@ export default function ExerciseCard({
           <span>Set {index + 1}</span>
 
           <input
-            placeholder="Weight"
-            value={sets[index].weight}
-            onChange={(e) =>
-              updateSet(index, "weight", e.target.value)
-            }
-          />
+  placeholder="Weight"
+  value={sets[index].weight}
+  onChange={(e) =>
+    updateSet(
+      index,
+      "weight",
+      e.target.value.replace(
+        /[^0-9.]/g,
+        ""
+      )
+    )
+  }
+/>
 
           <input
             placeholder="Reps"

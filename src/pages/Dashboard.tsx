@@ -3,6 +3,7 @@ import WorkoutCard from "../components/WorkoutCard";
 import StatsGrid from "../components/StatsGrid";
 
 import { getPersonalRecords } from "../utils/personalRecords";
+import { getNextWorkoutTargets } from "../utils/nextWorkoutTargets";
 
 import {
   getWorkoutCount,
@@ -39,6 +40,9 @@ export default function Dashboard({
 
   const personalRecords =
     getPersonalRecords();
+
+  const targets =
+    getNextWorkoutTargets();
 
   return (
     <div className="app">
@@ -161,6 +165,48 @@ export default function Dashboard({
               </div>
             )
           )}
+      </div>
+
+      <div
+        className="exercise-card"
+        style={{
+          marginTop: "20px",
+        }}
+      >
+        <h3>
+          🎯 Next Workout Targets
+        </h3>
+
+        {targets.length === 0 && (
+          <p>
+            Complete a workout to
+            generate targets.
+          </p>
+        )}
+
+        {targets.map((target) => (
+          <div
+            key={target.name}
+            style={{
+              display: "flex",
+              justifyContent:
+                "space-between",
+              marginTop: "12px",
+            }}
+          >
+            <span>
+              {target.name}
+            </span>
+
+            <div>
+              {target.lastWeight}kg →{" "}
+              <strong>
+                {target.targetWeight}
+                kg
+              </strong>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
