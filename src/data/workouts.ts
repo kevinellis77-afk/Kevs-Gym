@@ -1,4 +1,6 @@
 import { workoutA } from "./workoutA";
+import { workoutB } from "./workoutB";
+import { workoutC } from "./workoutC";
 
 export type WorkoutExercise = {
   id: string;
@@ -19,7 +21,7 @@ export type WorkoutTemplate = {
  * array based on whichever workout you completed most recently.
  *
  * To add another workout: give it a unique id, drop its exercise
- * list into a data/workoutB.ts (same shape as workoutA.ts), import
+ * list into a data/workoutX.ts (same shape as workoutA.ts), import
  * it here, and add an entry below.
  */
 export const workouts: WorkoutTemplate[] = [
@@ -29,11 +31,16 @@ export const workouts: WorkoutTemplate[] = [
     estimatedMinutes: 65,
     exercises: workoutA,
   },
-
-  // {
-  //   id: "workoutB",
-  //   name: "Workout B",
-  //   estimatedMinutes: 65,
-  //   exercises: workoutB,
-  // },
+  {
+    id: "workoutB",
+    name: "Workout B",
+    estimatedMinutes: 55,
+    exercises: workoutB,
+  },
+  {
+    id: "workoutC",
+    name: "Workout C",
+    estimatedMinutes: 65,
+    exercises: workoutC,
+  },
 ];
