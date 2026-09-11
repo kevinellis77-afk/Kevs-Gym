@@ -14,5 +14,5 @@ export interface WorkoutSession {
   date: string;
   notes: string;
   duration: number;
-  exercises: ExerciseRecord[];
+  exercises?: Record<string, any[]>;
 }
