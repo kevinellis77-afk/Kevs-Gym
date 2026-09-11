@@ -1,27 +1,21 @@
 type WorkoutCardProps = {
-  title: string;
-  exercises: number;
-  duration: number;
-  onStart: () => void;
+  onStartWorkout?: () => void;
 };
 
 export default function WorkoutCard({
-  title,
-  exercises,
-  duration,
-  onStart,
+  onStartWorkout,
 }: WorkoutCardProps) {
   return (
     <div className="workout-card">
       <span>Today's Workout</span>
 
-      <h2>{title}</h2>
+      <h2>Workout A</h2>
 
       <p>
-        {exercises} Exercises • {duration} Minutes
+        8 Exercises • 65 Minutes
       </p>
 
-      <button onClick={onStart}>
+      <button onClick={onStartWorkout}>
         Start Workout
       </button>
     </div>

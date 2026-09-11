@@ -2,89 +2,166 @@ import Header from "../components/Header";
 import WorkoutCard from "../components/WorkoutCard";
 import StatsGrid from "../components/StatsGrid";
 
+import { getPersonalRecords } from "../utils/personalRecords";
+
 import {
   getWorkoutCount,
   getWorkoutStreak,
   getLastWorkoutDaysAgo,
-  getLatestSession,
 } from "../utils/dashboardStats";
+
+import {
+  getLatestHealthEntry,
+  getWeightChange,
+} from "../utils/healthStats";
 
 type DashboardProps = {
   onStartWorkout: () => void;
-  onViewHistory?: () => void;
-  onViewProgress?: () => void;
 };
 
 export default function Dashboard({
   onStartWorkout,
-  onViewHistory,
-  onViewProgress,
 }: DashboardProps) {
-  const workoutCount = getWorkoutCount();
-  const streak = getWorkoutStreak();
-  const lastWorkout = getLastWorkoutDaysAgo();
-  const latestSession = getLatestSession();
+  const workoutCount =
+    getWorkoutCount();
+
+  const streak =
+    getWorkoutStreak();
+
+  const lastWorkout =
+    getLastWorkoutDaysAgo();
+
+  const health =
+    getLatestHealthEntry();
+
+  const weightChange =
+    getWeightChange();
+
+  const personalRecords =
+    getPersonalRecords();
 
   return (
     <div className="app">
       <Header />
 
       <WorkoutCard
-        title="Workout A"
-        exercises={8}
-        duration={65}
-        onStart={onStartWorkout}
+        onStartWorkout={
+          onStartWorkout
+        }
       />
 
       <StatsGrid
         stats={[
           {
+            label: "Weight",
+            value: health
+              ? `${health.weight}kg`
+              : "--",
+          },
+
+          {
+            label: "Blood Pressure",
+            value: health
+              ? `${health.systolic}/${health.diastolic}`
+              : "--",
+          },
+
+          {
+            label: "Resting HR",
+            value: health
+              ? `${health.restingHr}`
+              : "--",
+          },
+
+          {
             label: "Workouts",
             value: workoutCount,
           },
+
           {
-            label: "Latest Notes",
-            value: latestSession?.notes
-              ? latestSession.notes.substring(0, 12)
-              : "--",
+            label: "Weight Change",
+            value:
+              weightChange > 0
+                ? `+${weightChange}kg`
+                : `${weightChange}kg`,
           },
+
+          {
+            label: "Streak",
+            value: `${streak} days`,
+          },
+
           {
             label: "Last Workout",
             value:
               workoutCount > 0
-                ? `${lastWorkout} day${
-                    lastWorkout === 1 ? "" : "s"
-                  } ago`
+                ? lastWorkout === 0
+                  ? "Today"
+                  : `${lastWorkout}d`
                 : "--",
-          },
-          {
-            label: "Streak",
-            value: `${streak} day${
-              streak === 1 ? "" : "s"
-            }`,
           },
         ]}
       />
 
-      {onViewHistory && (
-        <button
-          className="finish-btn"
-          style={{ marginTop: "20px" }}
-          onClick={onViewHistory}
-        >
-          View Workout History
-        </button>
-      )}
+      <div
+        className="exercise-card"
+        style={{
+          marginTop: "20px",
+        }}
+      >
+        <h3>🏆 Personal Records</h3>
 
-      {onViewProgress && (
-        <button
-          className="finish-btn"
-          style={{ marginTop: "12px" }}
-          onClick={onViewProgress}
-        >
-          View Progress
-        </button>
-      )}
+        {Object.entries(
+          personalRecords
+        )
+          .sort(
+            (a, b) =>
+              b[1].best -
+              a[1].best
+          )
+          .slice(0, 5)
+          .map(
+            ([exercise, record]) => (
+              <div
+                key={exercise}
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    "space-between",
+                  marginTop: "12px",
+                }}
+              >
+                <span>
+                  {exercise}
+                </span>
+
+                <div>
+                  <strong>
+                    {record.best}kg
+                  </strong>
+
+                  {record.improvement >
+                    0 && (
+                    <span
+                      style={{
+                        marginLeft:
+                          "8px",
+                        color:
+                          "#22c55e",
+                      }}
+                    >
+                      ↑ +
+                      {
+                        record.improvement
+                      }
+                      kg
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+      </div>
     </div>
   );
 }
