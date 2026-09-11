@@ -16,11 +16,11 @@ export function getNextWorkoutTargets() {
   }[] = [];
 
   latestSession.exercises?.forEach(
-    (exercise: any) => {
+    (exercise) => {
       if (!exercise.sets) return;
 
       const weights = exercise.sets
-        .map((set: any) =>
+        .map((set) =>
           Number(set.weight)
         )
         .filter(
