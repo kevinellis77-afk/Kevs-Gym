@@ -7,6 +7,8 @@ import History from "./pages/History";
 import Progress from "./pages/Progress";
 import Health from "./pages/Health";
 
+import { getNextWorkout } from "./utils/workoutRotation";
+
 export default function App() {
   const [screen, setScreen] =
     useState("dashboard");
@@ -21,6 +23,7 @@ export default function App() {
   if (screen === "workout") {
     return (
       <Workout
+        workout={getNextWorkout()}
         onComplete={(
           volume,
           exerciseCount,

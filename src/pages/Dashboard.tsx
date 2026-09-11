@@ -16,6 +16,7 @@ import {
 
 import ProgressChart from "../components/ProgressChart";
 import { getExerciseHistory } from "../utils/progressChartData";
+import { getNextWorkout } from "../utils/workoutRotation";
 
 type DashboardProps = {
   onStartWorkout: () => void;
@@ -35,6 +36,7 @@ export default function Dashboard({
   const targets = getNextWorkoutTargets();
 
   const legPressHistory = getExerciseHistory("Leg Press");
+  const nextWorkout = getNextWorkout();
 
   const topRecords = Object.entries(personalRecords)
     .sort((a, b) => b[1].best - a[1].best)
@@ -142,7 +144,12 @@ export default function Dashboard({
 
       {/* 3. TODAY'S WORKOUT */}
 
-      <WorkoutCard onStartWorkout={onStartWorkout} />
+      <WorkoutCard
+        workoutName={nextWorkout.name}
+        exerciseCount={nextWorkout.exercises.length}
+        estimatedMinutes={nextWorkout.estimatedMinutes}
+        onStartWorkout={onStartWorkout}
+      />
 
       {/* 4. HEALTH SNAPSHOT */}
 

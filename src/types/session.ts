@@ -15,4 +15,8 @@ export type WorkoutSession = {
   notes: string;
   duration: number;
   exercises?: ExerciseRecord[];
+  // Which workout template this session came from. Optional so
+  // sessions saved before rotation was added still type-check.
+  workoutId?: string;
+  workoutName?: string;
 };

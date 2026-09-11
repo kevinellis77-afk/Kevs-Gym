@@ -1,15 +1,11 @@
 import { useState } from "react";
 import ExerciseCard from "../components/ExerciseCard";
-import { workoutA } from "../data/workoutA";
 import { saveSession } from "../utils/sessionStorage";
-
-type SetData = {
-  weight: string;
-  reps: string;
-  rpe: string;
-};
+import type { WorkoutTemplate } from "../data/workouts";
+import type { SetData } from "../types/session";
 
 type WorkoutProps = {
+  workout: WorkoutTemplate;
   onComplete: (
     volume: number,
     exerciseCount: number,
@@ -18,6 +14,7 @@ type WorkoutProps = {
 };
 
 export default function Workout({
+  workout,
   onComplete,
 }: WorkoutProps) {
   const [notes, setNotes] = useState("");
@@ -64,8 +61,10 @@ export default function Workout({
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
       notes,
-      duration: 65,
+      duration: workout.estimatedMinutes,
       exercises,
+      workoutId: workout.id,
+      workoutName: workout.name,
     });
 
     const totalVolume = exercises.reduce(
@@ -80,11 +79,11 @@ export default function Workout({
       0
     );
 
-    onComplete(totalVolume, exercises.length, 65);
+    onComplete(totalVolume, exercises.length, workout.estimatedMinutes);
   };
 
   const completedCount = touchedExercises.size;
-  const totalCount = workoutA.length;
+  const totalCount = workout.exercises.length;
   const progressPercent = totalCount
     ? Math.min(100, Math.round((completedCount / totalCount) * 100))
     : 0;
@@ -92,7 +91,7 @@ export default function Workout({
   return (
     <div className="app">
       <div className="page-header">
-        <h1 className="page-title">Workout A</h1>
+        <h1 className="page-title">{workout.name}</h1>
       </div>
 
       <div className="workout-progress-card">
@@ -111,7 +110,7 @@ export default function Workout({
         </div>
       </div>
 
-      {workoutA.map((exercise) => (
+      {workout.exercises.map((exercise) => (
         <ExerciseCard
           key={exercise.id}
           name={exercise.name}
