@@ -2,7 +2,13 @@ import { getSessions } from "../utils/sessionStorage";
 import { getExerciseHistory } from "../utils/progressChartData";
 import ProgressChart from "../components/ProgressChart";
 
-export default function Progress() {
+type ProgressProps = {
+  onBack: () => void;
+};
+
+export default function Progress({
+  onBack,
+}: ProgressProps) {
   const sessions = getSessions();
 
   const exerciseStats: Record<
@@ -225,6 +231,14 @@ export default function Progress() {
           </div>
         )
       )}
+
+<button
+  className="finish-btn"
+  onClick={onBack}
+  style={{ marginTop: "20px" }}
+>
+  Back to Dashboard
+</button>
     </div>
   );
 }

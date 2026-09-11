@@ -1,18 +1,18 @@
-type SetRecord = {
+export type SetData = {
   weight: string;
   reps: string;
   rpe: string;
 };
 
-type ExerciseRecord = {
+export type ExerciseRecord = {
   name: string;
-  sets: SetRecord[];
+  sets: SetData[];
 };
 
-export interface WorkoutSession {
+export type WorkoutSession = {
   id: string;
   date: string;
   notes: string;
   duration: number;
-  exercises?: Record<string, any[]>;
-}
+  exercises?: ExerciseRecord[];
+};

@@ -11,21 +11,14 @@ export function getLastExerciseData(
 
   const latestSession = sessions[0];
 
-  console.log(
-    "Latest session exercises:",
-    latestSession.exercises
-  );
+  if (!latestSession.exercises) {
+    return null;
+  }
 
-  const exercise =
+  return (
     latestSession.exercises.find(
-      (e: any) =>
-        e.name === exerciseName
-    );
-
-  console.log(
-    exerciseName,
-    exercise
+      (exercise) =>
+        exercise.name === exerciseName
+    ) || null
   );
-
-  return exercise || null;
 }
