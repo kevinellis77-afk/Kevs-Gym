@@ -2,17 +2,55 @@ import { useState } from "react";
 
 import Dashboard from "./pages/Dashboard";
 import Workout from "./pages/Workout";
+import WorkoutSummary from "./pages/WorkoutSummary";
 import History from "./pages/History";
 import Progress from "./pages/Progress";
 import Health from "./pages/Health";
 
 export default function App() {
-  const [screen, setScreen] = useState(
-    "dashboard"
-  );
+  const [screen, setScreen] =
+    useState("dashboard");
+
+  const [summaryData, setSummaryData] =
+    useState({
+      volume: 0,
+      exerciseCount: 0,
+      duration: 0,
+    });
 
   if (screen === "workout") {
-    return <Workout />;
+    return (
+      <Workout
+        onComplete={(
+          volume,
+          exerciseCount,
+          duration
+        ) => {
+          setSummaryData({
+            volume,
+            exerciseCount,
+            duration,
+          });
+
+          setScreen("summary");
+        }}
+      />
+    );
+  }
+
+  if (screen === "summary") {
+    return (
+      <WorkoutSummary
+        volume={summaryData.volume}
+        exerciseCount={
+          summaryData.exerciseCount
+        }
+        duration={summaryData.duration}
+        onFinish={() =>
+          setScreen("dashboard")
+        }
+      />
+    );
   }
 
   if (screen === "history") {

@@ -1,12 +1,8 @@
 import { getSessions } from "../utils/sessionStorage";
+import { getExerciseHistory } from "../utils/progressChartData";
+import ProgressChart from "../components/ProgressChart";
 
-type ProgressProps = {
-  onBack?: () => void;
-};
-
-export default function Progress({
-  onBack,
-}: ProgressProps) {
+export default function Progress() {
   const sessions = getSessions();
 
   const exerciseStats: Record<
@@ -120,9 +116,17 @@ export default function Progress({
       a[1].bestWeight
   );
 
+  const legPressHistory =
+    getExerciseHistory("Leg Press");
+
   return (
     <div className="app">
       <h1>Progress Tracking</h1>
+
+      <ProgressChart
+        title="Leg Press Progress"
+        data={legPressHistory}
+      />
 
       {leaderboard.map(
         ([exerciseName, stats]) => {
@@ -220,16 +224,6 @@ export default function Progress({
             </p>
           </div>
         )
-      )}
-
-      {onBack && (
-        <button
-          className="finish-btn"
-          style={{ marginTop: "20px" }}
-          onClick={onBack}
-        >
-          Back to Dashboard
-        </button>
       )}
     </div>
   );

@@ -9,12 +9,23 @@ type SetData = {
   rpe: string;
 };
 
-export default function Workout() {
+type WorkoutProps = {
+  onComplete: (
+    volume: number,
+    exerciseCount: number,
+    duration: number
+  ) => void;
+};
+
+export default function Workout({
+  onComplete,
+}: WorkoutProps) {
   const [notes, setNotes] = useState("");
 
-  const [exerciseData, setExerciseData] = useState<
-    Record<string, SetData[]>
-  >({});
+  const [exerciseData, setExerciseData] =
+    useState<
+      Record<string, SetData[]>
+    >({});
 
   const handleExerciseChange = (
     exerciseName: string,
@@ -27,25 +38,59 @@ export default function Workout() {
   };
 
   const handleSaveWorkout = () => {
-    const exercises = Object.entries(exerciseData).map(
-      ([name, sets]) => ({
-        name,
-        sets,
-      })
+    const exercises = Object.entries(
+      exerciseData
+    ).map(([name, sets]) => ({
+      name,
+      sets,
+    }));
+
+    console.log(
+      "Saving exercises:",
+      exercises
     );
 
     saveSession({
       id: crypto.randomUUID(),
-      date: new Date().toLocaleDateString("en-GB"),
+      date: new Date().toISOString(),
       notes,
       duration: 65,
       exercises,
     });
 
-    console.log("Workout Saved");
-    console.log(exercises);
+    const totalVolume =
+      exercises.reduce(
+        (
+          exerciseTotal,
+          exercise
+        ) =>
+          exerciseTotal +
+          exercise.sets.reduce(
+            (
+              setTotal,
+              set
+            ) =>
+              setTotal +
+              Number(
+                set.weight || 0
+              ) *
+                Number(
+                  set.reps || 0
+                ),
+            0
+          ),
+        0
+      );
 
-    alert("Workout saved");
+    console.log(
+      "Workout Saved"
+    );
+
+    onComplete(
+      totalVolume,
+      exercises.length,
+      65
+    );
   };
 
   return (
@@ -54,34 +99,53 @@ export default function Workout() {
 
       <p>
         Exercises completed:{" "}
-        {Object.keys(exerciseData).length}
+        {
+          Object.keys(
+            exerciseData
+          ).length
+        }
       </p>
 
-      {workoutA.map((exercise) => (
-        <ExerciseCard
-          key={exercise.id}
-          name={exercise.name}
-          targetWeight={exercise.targetWeight}
-          onChange={handleExerciseChange}
-        />
-      ))}
+      {workoutA.map(
+        (exercise) => (
+          <ExerciseCard
+            key={exercise.id}
+            name={
+              exercise.name
+            }
+            targetWeight={
+              exercise.targetWeight
+            }
+            onChange={
+              handleExerciseChange
+            }
+          />
+        )
+      )}
 
       <textarea
         placeholder="How did today's workout feel?"
         value={notes}
-        onChange={(e) => setNotes(e.target.value)}
+        onChange={(e) =>
+          setNotes(
+            e.target.value
+          )
+        }
         rows={4}
         style={{
           width: "100%",
           marginTop: "20px",
           padding: "12px",
-          borderRadius: "12px",
+          borderRadius:
+            "12px",
         }}
       />
 
       <button
         className="finish-btn"
-        onClick={handleSaveWorkout}
+        onClick={
+          handleSaveWorkout
+        }
       >
         Save Workout
       </button>
