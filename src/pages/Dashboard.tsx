@@ -12,11 +12,13 @@ import {
 type DashboardProps = {
   onStartWorkout: () => void;
   onViewHistory?: () => void;
+  onViewProgress?: () => void;
 };
 
 export default function Dashboard({
   onStartWorkout,
   onViewHistory,
+  onViewProgress,
 }: DashboardProps) {
   const workoutCount = getWorkoutCount();
   const streak = getWorkoutStreak();
@@ -71,6 +73,16 @@ export default function Dashboard({
           onClick={onViewHistory}
         >
           View Workout History
+        </button>
+      )}
+
+      {onViewProgress && (
+        <button
+          className="finish-btn"
+          style={{ marginTop: "12px" }}
+          onClick={onViewProgress}
+        >
+          View Progress
         </button>
       )}
     </div>

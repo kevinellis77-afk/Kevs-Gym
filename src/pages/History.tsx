@@ -1,6 +1,12 @@
 import { getSessions } from "../utils/sessionStorage";
 
-export default function History() {
+type HistoryProps = {
+  onBack?: () => void;
+};
+
+export default function History({
+  onBack,
+}: HistoryProps) {
   const sessions = getSessions();
 
   return (
@@ -19,28 +25,42 @@ export default function History() {
         >
           <h3>{session.date}</h3>
 
-          <p>Duration: {session.duration} mins</p>
+          <p>
+            Duration: {session.duration} mins
+          </p>
 
-          <p>Notes: {session.notes || "None"}</p>
+          <p>
+            Notes: {session.notes || "None"}
+          </p>
 
           {session.exercises &&
-            Object.entries(session.exercises).map(
+            Object.entries(
+              session.exercises
+            ).map(
               ([key, exercise]: any) => (
                 <div
                   key={key}
-                  style={{ marginTop: "15px" }}
+                  style={{
+                    marginTop: "15px",
+                  }}
                 >
-                  <strong>{exercise.name}</strong>
+                  <strong>
+                    {exercise.name}
+                  </strong>
 
                   {exercise.sets &&
                     exercise.sets.map(
-                      (set: any, index: number) => (
+                      (
+                        set: any,
+                        index: number
+                      ) => (
                         <div key={index}>
                           Set {index + 1}:{" "}
                           {set.weight || "-"}kg ×{" "}
                           {set.reps || "-"} reps
                           {" "}
-                          (RPE {set.rpe || "-"})
+                          (RPE{" "}
+                          {set.rpe || "-"})
                         </div>
                       )
                     )}
@@ -49,6 +69,16 @@ export default function History() {
             )}
         </div>
       ))}
+
+      {onBack && (
+        <button
+          className="finish-btn"
+          style={{ marginTop: "20px" }}
+          onClick={onBack}
+        >
+          Back to Dashboard
+        </button>
+      )}
     </div>
   );
 }

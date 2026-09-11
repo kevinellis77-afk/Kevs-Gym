@@ -106,3 +106,17 @@ body {
   font-weight: bold;
   cursor: pointer;
 }
+.health-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.health-grid input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  box-sizing: border-box;
+}
