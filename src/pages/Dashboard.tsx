@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import WorkoutCard from "../components/WorkoutCard";
 
 import { getPersonalRecords } from "../utils/personalRecords";
@@ -15,7 +17,15 @@ import {
 } from "../utils/healthStats";
 
 import ProgressChart from "../components/ProgressChart";
-import { getExerciseHistory } from "../utils/progressChartData";
+import ExercisePicker from "../components/ExercisePicker";
+import {
+  getExerciseHistory,
+  getAllExerciseNames,
+} from "../utils/progressChartData";
+import {
+  getSelectedChartExercise,
+  setSelectedChartExercise,
+} from "../utils/chartPreference";
 import { getNextWorkout } from "../utils/workoutRotation";
 
 type DashboardProps = {
@@ -35,7 +45,18 @@ export default function Dashboard({
   const personalRecords = getPersonalRecords();
   const targets = getNextWorkoutTargets();
 
-  const legPressHistory = getExerciseHistory("Leg Press");
+  const exerciseNames = getAllExerciseNames();
+
+  const [selectedExercise, setSelectedExercise] = useState(
+    getSelectedChartExercise(exerciseNames[0] || "Leg Press")
+  );
+
+  const handleExerciseChange = (name: string) => {
+    setSelectedExercise(name);
+    setSelectedChartExercise(name);
+  };
+
+  const exerciseHistory = getExerciseHistory(selectedExercise);
   const nextWorkout = getNextWorkout();
 
   const topRecords = Object.entries(personalRecords)
@@ -140,7 +161,16 @@ export default function Dashboard({
         </div>
       </div>
 
-      <ProgressChart title="Leg Press Progress" data={legPressHistory} />
+      <ExercisePicker
+        exercises={exerciseNames}
+        value={selectedExercise}
+        onChange={handleExerciseChange}
+      />
+
+      <ProgressChart
+        title={`${selectedExercise} Progress`}
+        data={exerciseHistory}
+      />
 
       {/* 3. TODAY'S WORKOUT */}
 

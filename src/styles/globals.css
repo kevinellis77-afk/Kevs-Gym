@@ -622,6 +622,24 @@
     color: var(--muted);
   }
   
+  .select-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    color: var(--text);
+    border-radius: var(--radius-s);
+    padding: 11px 12px;
+    font: var(--text-small);
+    margin-bottom: var(--space-s);
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  
+  .select-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  
   .history-row {
     display: flex;
     justify-content: space-between;

@@ -1,6 +1,16 @@
+import { useState } from "react";
+
 import { getSessions } from "../utils/sessionStorage";
-import { getExerciseHistory } from "../utils/progressChartData";
+import {
+  getExerciseHistory,
+  getAllExerciseNames,
+} from "../utils/progressChartData";
+import {
+  getSelectedChartExercise,
+  setSelectedChartExercise,
+} from "../utils/chartPreference";
 import ProgressChart from "../components/ProgressChart";
+import ExercisePicker from "../components/ExercisePicker";
 
 type ProgressProps = {
   onBack: () => void;
@@ -90,7 +100,18 @@ export default function Progress({
     (a, b) => b[1].bestWeight - a[1].bestWeight
   );
 
-  const legPressHistory = getExerciseHistory("Leg Press");
+  const exerciseNames = getAllExerciseNames();
+
+  const [selectedExercise, setSelectedExercise] = useState(
+    getSelectedChartExercise(exerciseNames[0] || "Leg Press")
+  );
+
+  const handleExerciseChange = (name: string) => {
+    setSelectedExercise(name);
+    setSelectedChartExercise(name);
+  };
+
+  const exerciseHistory = getExerciseHistory(selectedExercise);
 
   return (
     <div className="app">
@@ -98,7 +119,16 @@ export default function Progress({
         <h1 className="page-title">Progress</h1>
       </div>
 
-      <ProgressChart title="Leg Press Progress" data={legPressHistory} />
+      <ExercisePicker
+        exercises={exerciseNames}
+        value={selectedExercise}
+        onChange={handleExerciseChange}
+      />
+
+      <ProgressChart
+        title={`${selectedExercise} Progress`}
+        data={exerciseHistory}
+      />
 
       <div className="card">
         <h2 className="section-heading">Strength Rankings</h2>

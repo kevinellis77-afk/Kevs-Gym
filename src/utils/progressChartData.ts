@@ -1,4 +1,5 @@
 import { getSessions } from "./sessionStorage";
+import { workouts } from "../data/workouts";
 
 export function getExerciseHistory(
   exerciseName: string
@@ -47,4 +48,21 @@ export function getExerciseHistory(
     });
 
   return history;
+}
+
+/**
+ * Every exercise name across all workouts in the rotation
+ * (deduplicated, alphabetical) — used to populate the exercise
+ * picker for the progress chart.
+ */
+export function getAllExerciseNames(): string[] {
+  const names = new Set<string>();
+
+  workouts.forEach((workout) => {
+    workout.exercises.forEach((exercise) => {
+      names.add(exercise.name);
+    });
+  });
+
+  return Array.from(names).sort();
 }
