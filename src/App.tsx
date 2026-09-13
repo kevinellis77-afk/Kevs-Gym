@@ -6,8 +6,11 @@ import WorkoutSummary from "./pages/WorkoutSummary";
 import History from "./pages/History";
 import Progress from "./pages/Progress";
 import Health from "./pages/Health";
+import BottomNav from "./components/BottomNav";
 
 import { getNextWorkout } from "./utils/workoutRotation";
+
+type NavTab = "dashboard" | "progress" | "history" | "health";
 
 export default function App() {
   const [screen, setScreen] =
@@ -19,6 +22,17 @@ export default function App() {
       exerciseCount: 0,
       duration: 0,
     });
+
+  // Screens that show the bottom tab bar. Workout and its post-session
+  // summary are deliberately excluded — see workout screen below.
+  const NAV_SCREENS: NavTab[] = [
+    "dashboard",
+    "progress",
+    "history",
+    "health",
+  ];
+
+  const showNav = NAV_SCREENS.includes(screen as NavTab);
 
   if (screen === "workout") {
     return (
@@ -56,73 +70,38 @@ export default function App() {
     );
   }
 
-  if (screen === "history") {
-    return (
-      <History
-        onBack={() =>
-          setScreen("dashboard")
-        }
-      />
-    );
-  }
-
-  if (screen === "progress") {
-    return (
-      <Progress
-        onBack={() =>
-          setScreen("dashboard")
-        }
-      />
-    );
-  }
-
-  if (screen === "health") {
-    return (
-      <Health
-        onBack={() =>
-          setScreen("dashboard")
-        }
-      />
-    );
-  }
-
   return (
-    <div className="app">
-      <Dashboard
-        onStartWorkout={() =>
-          setScreen("workout")
-        }
-      />
+    <>
+      {screen === "history" && (
+        <History
+          onBack={() => setScreen("dashboard")}
+        />
+      )}
 
-      <button
-        className="finish-btn"
-        style={{ marginTop: "12px" }}
-        onClick={() =>
-          setScreen("history")
-        }
-      >
-        Workout History
-      </button>
+      {screen === "progress" && (
+        <Progress
+          onBack={() => setScreen("dashboard")}
+        />
+      )}
 
-      <button
-        className="finish-btn"
-        style={{ marginTop: "12px" }}
-        onClick={() =>
-          setScreen("progress")
-        }
-      >
-        Progress Tracking
-      </button>
+      {screen === "health" && (
+        <Health
+          onBack={() => setScreen("dashboard")}
+        />
+      )}
 
-      <button
-        className="finish-btn"
-        style={{ marginTop: "12px" }}
-        onClick={() =>
-          setScreen("health")
-        }
-      >
-        Health Tracker
-      </button>
-    </div>
+      {screen === "dashboard" && (
+        <Dashboard
+          onStartWorkout={() => setScreen("workout")}
+        />
+      )}
+
+      {showNav && (
+        <BottomNav
+          active={screen as NavTab}
+          onNavigate={(tab) => setScreen(tab)}
+        />
+      )}
+    </>
   );
 }

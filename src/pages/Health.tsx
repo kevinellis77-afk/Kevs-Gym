@@ -22,7 +22,21 @@ export default function Health({
 
   const [entries, setEntries] = useState(getHealthEntries());
 
+  const isValid =
+    weight.trim() !== "" &&
+    Number(weight) > 0 &&
+    waist.trim() !== "" &&
+    Number(waist) > 0 &&
+    systolic.trim() !== "" &&
+    Number(systolic) > 0 &&
+    diastolic.trim() !== "" &&
+    Number(diastolic) > 0 &&
+    restingHr.trim() !== "" &&
+    Number(restingHr) > 0;
+
   const handleSave = () => {
+    if (!isValid) return;
+
     const newEntry = {
       id: crypto.randomUUID(),
       date: new Date().toLocaleDateString("en-GB"),
@@ -175,9 +189,19 @@ export default function Health({
           </div>
         </div>
 
-        <button className="finish-btn" onClick={handleSave}>
+        <button
+          className="finish-btn"
+          onClick={handleSave}
+          disabled={!isValid}
+        >
           Save Health Entry
         </button>
+
+        {!isValid && (
+          <p className="field-hint">
+            Fill in all five fields to save an entry.
+          </p>
+        )}
       </div>
 
       {/* HISTORICAL TREND */}

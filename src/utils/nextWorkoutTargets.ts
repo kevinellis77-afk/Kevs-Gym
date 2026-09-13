@@ -1,13 +1,9 @@
 import { getSessions } from "./sessionStorage";
+import { getNextWorkout } from "./workoutRotation";
 
 export function getNextWorkoutTargets() {
   const sessions = getSessions();
-
-  if (sessions.length === 0) {
-    return [];
-  }
-
-  const latestSession = sessions[0];
+  const upcomingWorkout = getNextWorkout();
 
   const targets: {
     name: string;
@@ -15,48 +11,48 @@ export function getNextWorkoutTargets() {
     targetWeight: number;
   }[] = [];
 
-  latestSession.exercises?.forEach(
-    (exercise: any) => {
-      if (!exercise.sets) return;
+  const lowerBodyExercises = [
+    "Leg Press",
+    "Leg Extension",
+    "Seated Leg Curl",
+  ];
 
-      const weights = exercise.sets
-        .map((set: any) =>
-          Number(set.weight)
-        )
-        .filter(
-          (weight: number) =>
-            weight > 0
-        );
+  upcomingWorkout.exercises.forEach((exercise) => {
+    // Find the most recent session that actually logged this exercise -
+    // may be several sessions back now that workouts rotate, not just
+    // the very last session saved.
+    const sessionWithExercise = sessions.find((session: any) =>
+      session.exercises?.some(
+        (loggedExercise: any) => loggedExercise.name === exercise.name
+      )
+    );
 
-      if (weights.length === 0) return;
+    if (!sessionWithExercise) return;
 
-      const lastWeight =
-        Math.max(...weights);
+    const loggedExercise = sessionWithExercise.exercises.find(
+      (e: any) => e.name === exercise.name
+    );
 
-      let increase = 2.5;
+    if (!loggedExercise?.sets) return;
 
-      const lowerBodyExercises = [
-        "Leg Press",
-        "Leg Extension",
-        "Leg Curl",
-      ];
+    const weights = loggedExercise.sets
+      .map((set: any) => Number(set.weight))
+      .filter((weight: number) => weight > 0);
 
-      if (
-        lowerBodyExercises.includes(
-          exercise.name
-        )
-      ) {
-        increase = 5;
-      }
+    if (weights.length === 0) return;
 
-      targets.push({
-        name: exercise.name,
-        lastWeight,
-        targetWeight:
-          lastWeight + increase,
-      });
-    }
-  );
+    const lastWeight = Math.max(...weights);
+
+    const increase = lowerBodyExercises.includes(exercise.name)
+      ? 5
+      : 2.5;
+
+    targets.push({
+      name: exercise.name,
+      lastWeight,
+      targetWeight: lastWeight + increase,
+    });
+  });
 
   return targets;
 }

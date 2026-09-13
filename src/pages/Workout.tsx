@@ -115,6 +115,7 @@ export default function Workout({
           key={exercise.id}
           name={exercise.name}
           targetWeight={exercise.targetWeight}
+          trackingType={exercise.trackingType}
           onChange={handleExerciseChange}
           onInteract={handleExerciseInteract}
         />

@@ -5,6 +5,7 @@ import {
   getExerciseHistory,
   getAllExerciseNames,
 } from "../utils/progressChartData";
+import { getTrackingType } from "../utils/exerciseMeta";
 import {
   getSelectedChartExercise,
   setSelectedChartExercise,
@@ -146,6 +147,8 @@ export default function Progress({
               ? Math.round((improvement / stats.firstWeight) * 100)
               : 0;
 
+          const trackingType = getTrackingType(exerciseName);
+
           return (
             <div
               key={exerciseName}
@@ -166,15 +169,21 @@ export default function Progress({
               <div className="list-row" style={{ borderBottom: "none", paddingTop: 0 }}>
                 <span className="list-row-label">Personal Record</span>
                 <span className="list-row-value">
-                  {stats.bestWeight}kg &times; {stats.bestReps}
+                  {trackingType === "duration"
+                    ? `${stats.bestWeight}kg for ${stats.bestReps}s`
+                    : `${stats.bestWeight}kg \u00d7 ${stats.bestReps}`}
                 </span>
               </div>
 
               <div className="progress-stat-grid">
                 <div className="progress-stat">
-                  <span className="progress-stat-label">Est. 1RM</span>
+                  <span className="progress-stat-label">
+                    {trackingType === "duration" ? "Best Hold" : "Est. 1RM"}
+                  </span>
                   <div className="progress-stat-value">
-                    {stats.estimated1RM}kg
+                    {trackingType === "duration"
+                      ? `${stats.bestReps}s`
+                      : `${stats.estimated1RM}kg`}
                   </div>
                 </div>
 
@@ -211,8 +220,9 @@ export default function Progress({
               >
                 <span className="list-row-label">Last Session</span>
                 <span className="list-row-value">
-                  {stats.lastWeight}kg &times; {stats.lastReps} @ RPE{" "}
-                  {stats.lastRpe}
+                  {trackingType === "duration"
+                    ? `${stats.lastWeight}kg for ${stats.lastReps}s @ RPE ${stats.lastRpe}`
+                    : `${stats.lastWeight}kg \u00d7 ${stats.lastReps} @ RPE ${stats.lastRpe}`}
                 </span>
               </div>
             </div>

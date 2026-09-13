@@ -21,13 +21,14 @@ export function getLastWorkoutDaysAgo() {
     return "--";
   }
 
-  const parts = latest.date.split("/");
+  // Sessions store date as an ISO string (new Date().toISOString()),
+  // so parse it directly rather than manually splitting on "/" -
+  // that format assumption didn't match how dates are actually saved.
+  const workoutDate = new Date(latest.date);
 
-  const workoutDate = new Date(
-    Number(parts[2]),
-    Number(parts[1]) - 1,
-    Number(parts[0])
-  );
+  if (isNaN(workoutDate.getTime())) {
+    return "--";
+  }
 
   const today = new Date();
 

@@ -6,6 +6,10 @@ export type WorkoutExercise = {
   id: string;
   name: string;
   targetWeight: number;
+  // Defaults to "reps" when omitted. "duration" is for timed holds
+  // (e.g. Suitcase Hold) — the value still goes in the same "reps"
+  // slot in SetData, this only changes how the UI labels it.
+  trackingType?: "reps" | "duration";
 };
 
 export type WorkoutTemplate = {

@@ -154,9 +154,7 @@ export default function Dashboard({
           <div className="summary-tile">
             <span className="summary-tile-label">Consistency</span>
             <div className="summary-tile-value">{streak}</div>
-            <span className="trend-flat">
-              {streak === 1 ? "day streak" : "day streak"}
-            </span>
+            <span className="trend-flat">Sessions Logged</span>
           </div>
         </div>
       </div>

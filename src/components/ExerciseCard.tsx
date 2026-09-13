@@ -10,6 +10,7 @@ type SetData = {
 type Props = {
   name: string;
   targetWeight: number;
+  trackingType?: "reps" | "duration";
   onChange: (
     exerciseName: string,
     sets: SetData[]
@@ -23,6 +24,7 @@ type Props = {
 export default function ExerciseCard({
   name,
   targetWeight,
+  trackingType = "reps",
   onChange,
   onInteract,
 }: Props) {
@@ -89,7 +91,9 @@ export default function ExerciseCard({
           <div className="exercise-meta">
             <span className="exercise-meta-label">Last Session</span>
             <span className="exercise-meta-value-last">
-              {lastWeight}kg &times; {lastReps}
+              {trackingType === "duration"
+                ? `${lastWeight}kg for ${lastReps}s`
+                : `${lastWeight}kg \u00d7 ${lastReps}`}
             </span>
           </div>
         )}
@@ -98,7 +102,7 @@ export default function ExerciseCard({
       <div className="set-table-header">
         <span></span>
         <span>Weight</span>
-        <span>Reps</span>
+        <span>{trackingType === "duration" ? "Duration (s)" : "Reps"}</span>
         <span>RPE</span>
       </div>
 
@@ -123,7 +127,7 @@ export default function ExerciseCard({
             type="number"
             inputMode="numeric"
             value={sets[index].reps}
-            placeholder="0"
+            placeholder={trackingType === "duration" ? "sec" : "0"}
             onChange={(e) => updateSet(index, "reps", e.target.value)}
           />
 
