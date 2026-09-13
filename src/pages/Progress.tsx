@@ -7,19 +7,44 @@ import {
 } from "../utils/progressChartData";
 import { getTrackingType } from "../utils/exerciseMeta";
 import {
+  getWeeklyRollup,
+  getPreviousWeeklyRollup,
+  getMonthlyRollup,
+  getPreviousMonthlyRollup,
+  type RollupStats,
+} from "../utils/progressRollups";
+import {
   getSelectedChartExercise,
   setSelectedChartExercise,
 } from "../utils/chartPreference";
 import ProgressChart from "../components/ProgressChart";
 import ExercisePicker from "../components/ExercisePicker";
 
-type ProgressProps = {
-  onBack: () => void;
-};
+function volumeTrend(current: RollupStats, previous: RollupStats) {
+  if (previous.totalVolume === 0) {
+    return current.totalVolume > 0
+      ? { text: "First activity logged", className: "trend-flat" }
+      : { text: "No activity yet", className: "trend-flat" };
+  }
 
-export default function Progress({
-  onBack,
-}: ProgressProps) {
+  const change = Math.round(
+    ((current.totalVolume - previous.totalVolume) /
+      previous.totalVolume) *
+      100
+  );
+
+  if (change > 0) {
+    return { text: `+${change}% vs previous period`, className: "trend-up" };
+  }
+
+  if (change < 0) {
+    return { text: `${change}% vs previous period`, className: "trend-down" };
+  }
+
+  return { text: "Same as previous period", className: "trend-flat" };
+}
+
+export default function Progress() {
   const sessions = getSessions();
 
   const exerciseStats: Record<
@@ -114,10 +139,52 @@ export default function Progress({
 
   const exerciseHistory = getExerciseHistory(selectedExercise);
 
+  const weekly = getWeeklyRollup();
+  const previousWeekly = getPreviousWeeklyRollup();
+  const monthly = getMonthlyRollup();
+  const previousMonthly = getPreviousMonthlyRollup();
+
+  const weeklyTrend = volumeTrend(weekly, previousWeekly);
+  const monthlyTrend = volumeTrend(monthly, previousMonthly);
+
   return (
     <div className="app">
       <div className="page-header">
         <h1 className="page-title">Progress</h1>
+      </div>
+
+      <div className="card">
+        <h2 className="section-heading">Recent Activity</h2>
+
+        <div className="summary-grid-2">
+          <div className="summary-tile">
+            <span className="summary-tile-label">This Week</span>
+            <div className="summary-tile-value">
+              {weekly.totalVolume.toLocaleString()}kg
+            </div>
+            <span className="summary-tile-meta">
+              {weekly.sessionCount} session
+              {weekly.sessionCount === 1 ? "" : "s"}
+            </span>
+            <span className={weeklyTrend.className}>
+              {weeklyTrend.text}
+            </span>
+          </div>
+
+          <div className="summary-tile">
+            <span className="summary-tile-label">This Month</span>
+            <div className="summary-tile-value">
+              {monthly.totalVolume.toLocaleString()}kg
+            </div>
+            <span className="summary-tile-meta">
+              {monthly.sessionCount} session
+              {monthly.sessionCount === 1 ? "" : "s"}
+            </span>
+            <span className={monthlyTrend.className}>
+              {monthlyTrend.text}
+            </span>
+          </div>
+        </div>
       </div>
 
       <ExercisePicker
@@ -229,10 +296,6 @@ export default function Progress({
           );
         })}
       </div>
-
-      <button className="btn-secondary" onClick={onBack}>
-        Back to Dashboard
-      </button>
     </div>
   );
 }

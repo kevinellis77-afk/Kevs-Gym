@@ -24,7 +24,7 @@ export default function App() {
     });
 
   // Screens that show the bottom tab bar. Workout and its post-session
-  // summary are deliberately excluded — see workout screen below.
+  // summary are deliberately excluded - see workout screen below.
   const NAV_SCREENS: NavTab[] = [
     "dashboard",
     "progress",
@@ -72,23 +72,11 @@ export default function App() {
 
   return (
     <>
-      {screen === "history" && (
-        <History
-          onBack={() => setScreen("dashboard")}
-        />
-      )}
+      {screen === "history" && <History />}
 
-      {screen === "progress" && (
-        <Progress
-          onBack={() => setScreen("dashboard")}
-        />
-      )}
+      {screen === "progress" && <Progress />}
 
-      {screen === "health" && (
-        <Health
-          onBack={() => setScreen("dashboard")}
-        />
-      )}
+      {screen === "health" && <Health />}
 
       {screen === "dashboard" && (
         <Dashboard

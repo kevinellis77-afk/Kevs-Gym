@@ -248,6 +248,12 @@ export default function Dashboard({
       <div className="card">
         <h2 className="section-heading">Next Workout Targets</h2>
 
+        {targets.length > 0 && (
+          <p className="section-subheading">
+            Based on your recent RPE
+          </p>
+        )}
+
         {targets.length === 0 && (
           <p className="empty-state">
             Complete a workout to generate targets.
@@ -258,10 +264,16 @@ export default function Dashboard({
           <div key={target.name} className="list-row">
             <span className="list-row-label">{target.name}</span>
 
-            <span className="list-row-target">
-              {target.lastWeight}kg &rarr;{" "}
-              <strong>{target.targetWeight}kg</strong>
-            </span>
+            {target.status === "hold" ? (
+              <span className="list-row-target">
+                Hold at <strong>{target.lastWeight}kg</strong>
+              </span>
+            ) : (
+              <span className="list-row-target">
+                {target.lastWeight}kg &rarr;{" "}
+                <strong>{target.targetWeight}kg</strong>
+              </span>
+            )}
           </div>
         ))}
       </div>

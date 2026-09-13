@@ -226,6 +226,12 @@
     gap: var(--space-s);
   }
   
+  .summary-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-s);
+  }
+  
   .summary-tile {
     background: var(--surface);
     border: 1px solid var(--card-border);
@@ -247,6 +253,13 @@
     margin-top: 6px;
     font: var(--text-h3);
     font-variant-numeric: tabular-nums;
+  }
+  
+  .summary-tile-meta {
+    display: block;
+    font: var(--text-small);
+    color: var(--text-secondary);
+    margin: 2px 0;
   }
   
   .trend-up {
@@ -539,6 +552,9 @@
   .set-row-label {
     font: var(--text-small);
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   
   .set-input {
@@ -731,6 +747,21 @@
   .button-row .btn-secondary {
     margin-top: 0;
     flex: 1;
+  }
+  
+  .set-check-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--success);
+    flex-shrink: 0;
+  }
+  
+  .set-row-complete .set-row-label {
+    color: var(--success);
+  }
+  
+  .set-row-complete .set-input {
+    border-color: var(--success);
   }
   
   .bottom-nav {

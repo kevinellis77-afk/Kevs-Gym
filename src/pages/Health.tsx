@@ -6,14 +6,12 @@ import {
 } from "../utils/healthStorage";
 
 import ProgressChart from "../components/ProgressChart";
+import BPChart from "../components/BPChart";
 
-type HealthProps = {
-  onBack?: () => void;
-};
+// 15st 7lb, converted to kg. Update this if the goal changes.
+const WEIGHT_GOAL_KG = 98.4;
 
-export default function Health({
-  onBack,
-}: HealthProps) {
+export default function Health() {
   const [weight, setWeight] = useState("");
   const [waist, setWaist] = useState("");
   const [systolic, setSystolic] = useState("");
@@ -65,6 +63,14 @@ export default function Health({
     .map((entry: any) => ({
       date: entry.date,
       weight: entry.weight,
+    }));
+
+  const bpTrendData = [...entries]
+    .reverse()
+    .map((entry: any) => ({
+      date: entry.date,
+      systolic: entry.systolic,
+      diastolic: entry.diastolic,
     }));
 
   const previousEntries = entries.slice(1, 6);
@@ -206,7 +212,14 @@ export default function Health({
 
       {/* HISTORICAL TREND */}
 
-      <ProgressChart title="Weight Trend" data={weightTrendData} />
+      <ProgressChart
+        title="Weight Trend"
+        data={weightTrendData}
+        goalValue={WEIGHT_GOAL_KG}
+        goalLabel={`Goal: ${WEIGHT_GOAL_KG}kg`}
+      />
+
+      <BPChart data={bpTrendData} />
 
       {previousEntries.length > 0 && (
         <div className="card">
@@ -226,12 +239,6 @@ export default function Health({
             </div>
           ))}
         </div>
-      )}
-
-      {onBack && (
-        <button className="btn-secondary" onClick={onBack}>
-          Back to Dashboard
-        </button>
       )}
     </div>
   );

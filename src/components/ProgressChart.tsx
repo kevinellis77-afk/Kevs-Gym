@@ -2,7 +2,10 @@ import {
   LineChart,
   Line,
   XAxis,
+  YAxis,
   Tooltip,
+  ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
 } from "recharts";
 
@@ -12,11 +15,18 @@ type Props = {
     date: string;
     weight: number;
   }[];
+  // Optional goal shading - draws a shaded zone from 0 up to
+  // goalValue plus a dashed reference line at it, so the chart
+  // reads as "get the line into the green" rather than just a log.
+  goalValue?: number;
+  goalLabel?: string;
 };
 
 export default function ProgressChart({
   title,
   data,
+  goalValue,
+  goalLabel,
 }: Props) {
   const hasData = data && data.length > 0;
 
@@ -35,6 +45,28 @@ export default function ProgressChart({
     change === 0
       ? "No change"
       : `${change > 0 ? "+" : ""}${change}kg`;
+
+  // Y-axis domain needs to stretch to include the goal line too,
+  // in case it sits below (or above) the current data range.
+  let yDomain: [number, number] | undefined;
+
+  if (hasData) {
+    const values = data.map((point) => point.weight);
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+
+    const lowerBound =
+      goalValue !== undefined ? Math.min(dataMin, goalValue) : dataMin;
+    const upperBound =
+      goalValue !== undefined ? Math.max(dataMax, goalValue) : dataMax;
+
+    const padding = Math.max(2, (upperBound - lowerBound) * 0.15);
+
+    yDomain = [
+      Math.max(0, Math.floor(lowerBound - padding)),
+      Math.ceil(upperBound + padding),
+    ];
+  }
 
   return (
     <div className="card">
@@ -72,6 +104,33 @@ export default function ProgressChart({
                 axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
                 tickLine={false}
               />
+
+              <YAxis domain={yDomain} hide />
+
+              {goalValue !== undefined && (
+                <ReferenceArea
+                  y1={0}
+                  y2={goalValue}
+                  fill="#3DD68C"
+                  fillOpacity={0.08}
+                  stroke="none"
+                />
+              )}
+
+              {goalValue !== undefined && (
+                <ReferenceLine
+                  y={goalValue}
+                  stroke="#3DD68C"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  label={{
+                    value: goalLabel || `Goal: ${goalValue}`,
+                    position: "insideTopRight",
+                    fill: "#3DD68C",
+                    fontSize: 11,
+                  }}
+                />
+              )}
 
               <Tooltip
                 contentStyle={{
