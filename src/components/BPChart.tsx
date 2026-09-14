@@ -1,118 +1,120 @@
 import {
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    Tooltip,
-    Legend,
-    ReferenceLine,
-    ResponsiveContainer,
-  } from "recharts";
-  
-  type Props = {
-    data: {
-      date: string;
-      systolic: number;
-      diastolic: number;
-    }[];
-  };
-  
-  /**
-   * Blood pressure trend - two lines (systolic/diastolic) with dashed
-   * reference lines at 120 and 80, the standard clinical thresholds
-   * for "normal" blood pressure. These are widely recognized medical
-   * reference points, not a personalized target.
-   */
-  export default function BPChart({ data }: Props) {
-    const hasData = data && data.length > 0;
-  
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+  ResponsiveContainer,
+} from "recharts";
+
+type DataPoint = {
+  date: string;
+  systolic: number;
+  diastolic: number;
+};
+
+type Props = {
+  data: DataPoint[];
+  height?: number;
+};
+
+/**
+ * Bare chart primitive, same pattern as ProgressChart - no title,
+ * no wrapper. Two lines: systolic (solid, accent) and diastolic
+ * (dashed, ink) - the palette only has two strong colors, so stroke
+ * style carries the distinction rather than a third invented color.
+ * Reference lines at 120/80 - standard clinical "normal" thresholds.
+ */
+export default function BPChart({ data, height = 100 }: Props) {
+  const hasData = data && data.length > 0;
+
+  if (!hasData) {
     return (
-      <div className="card">
-        <h3 className="exercise-name" style={{ marginBottom: "4px" }}>
-          Blood Pressure Trend
-        </h3>
-  
-        {!hasData && (
-          <p className="empty-state">
-            Log a few entries to see this trend.
-          </p>
-        )}
-  
-        {hasData && (
-          <div style={{ width: "100%", height: 160, marginTop: "8px" }}>
-            <ResponsiveContainer>
-              <LineChart
-                data={data}
-                margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
-              >
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "#5C6478", fontSize: 11 }}
-                  axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                  tickLine={false}
-                />
-  
-                <YAxis hide domain={["dataMin - 10", "dataMax + 10"]} />
-  
-                <ReferenceLine
-                  y={120}
-                  stroke="#3DD68C"
-                  strokeDasharray="4 4"
-                  strokeWidth={1.5}
-                  label={{
-                    value: "Normal (120/80)",
-                    position: "insideTopRight",
-                    fill: "#3DD68C",
-                    fontSize: 11,
-                  }}
-                />
-  
-                <ReferenceLine
-                  y={80}
-                  stroke="#3DD68C"
-                  strokeDasharray="4 4"
-                  strokeWidth={1.5}
-                />
-  
-                <Tooltip
-                  contentStyle={{
-                    background: "#1A2130",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    borderRadius: 12,
-                    fontSize: 13,
-                  }}
-                  labelStyle={{ color: "#9AA3B5" }}
-                  itemStyle={{ color: "#F2F4F8" }}
-                />
-  
-                <Legend
-                  wrapperStyle={{ fontSize: 12, color: "#9AA3B5" }}
-                />
-  
-                <Line
-                  type="monotone"
-                  dataKey="systolic"
-                  name="Systolic"
-                  stroke="#5E8DFF"
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: "#5E8DFF", strokeWidth: 0 }}
-                  activeDot={{ r: 5 }}
-                />
-  
-                <Line
-                  type="monotone"
-                  dataKey="diastolic"
-                  name="Diastolic"
-                  stroke="#F5B94D"
-                  strokeWidth={2.5}
-                  dot={{ r: 3, fill: "#F5B94D", strokeWidth: 0 }}
-                  activeDot={{ r: 5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
+      <p className="empty-state">Log a few entries to see this trend.</p>
     );
   }
-  
+
+  const lastIndex = data.length - 1;
+
+  const squareDot =
+    (color: string) =>
+    (dotProps: any) => {
+      const isLast = dotProps.index === lastIndex;
+      const size = 3;
+
+      return (
+        <rect
+          key={dotProps.index}
+          x={dotProps.cx - size}
+          y={dotProps.cy - size}
+          width={size * 2}
+          height={size * 2}
+          fill={isLast ? "#201e1d" : color}
+        />
+      );
+    };
+
+  return (
+    <div style={{ width: "100%", height }}>
+      <ResponsiveContainer>
+        <LineChart
+          data={data}
+          margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
+        >
+          <XAxis
+            dataKey="date"
+            tick={false}
+            axisLine={{ stroke: "rgba(32,30,29,.4)", strokeWidth: 2 }}
+            tickLine={false}
+          />
+
+          <YAxis hide domain={["dataMin - 10", "dataMax + 10"]} />
+
+          <ReferenceLine
+            y={120}
+            stroke="#605d5d"
+            strokeDasharray="4 4"
+            strokeWidth={1.5}
+          />
+
+          <ReferenceLine
+            y={80}
+            stroke="#605d5d"
+            strokeDasharray="4 4"
+            strokeWidth={1.5}
+          />
+
+          <Tooltip
+            contentStyle={{
+              background: "#201e1d",
+              color: "#f3f2f2",
+              border: 0,
+              borderRadius: 0,
+              fontSize: 12,
+            }}
+          />
+
+          <Line
+            type="linear"
+            dataKey="systolic"
+            stroke="#ec3013"
+            strokeWidth={2}
+            dot={squareDot("#ec3013")}
+            activeDot={{ r: 4 }}
+          />
+
+          <Line
+            type="linear"
+            dataKey="diastolic"
+            stroke="#201e1d"
+            strokeWidth={2}
+            strokeDasharray="4 2"
+            dot={squareDot("#201e1d")}
+            activeDot={{ r: 4 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

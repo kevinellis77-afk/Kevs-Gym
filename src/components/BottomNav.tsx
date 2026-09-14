@@ -49,18 +49,18 @@ function TabIcon({ tab }: { tab: Tab }) {
 
 export default function BottomNav({ active, onNavigate }: Props) {
   return (
-    <nav className="bottom-nav">
+    <nav className="tabbar">
       {TABS.map((tab) => (
         <button
           key={tab.key}
           className={
-            "bottom-nav-item" +
-            (active === tab.key ? " bottom-nav-item-active" : "")
+            "tabbar-item" +
+            (active === tab.key ? " tabbar-item-active" : "")
           }
           onClick={() => onNavigate(tab.key)}
         >
           <TabIcon tab={tab.key} />
-          <span className="bottom-nav-label">{tab.label}</span>
+          <span className="tabbar-label">{tab.label}</span>
         </button>
       ))}
     </nav>

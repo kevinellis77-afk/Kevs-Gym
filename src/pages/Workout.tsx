@@ -1,6 +1,8 @@
 import { useState } from "react";
-import ExerciseCard from "../components/ExerciseCard";
+import ExerciseLogger from "../components/ExerciseLogger";
 import { saveSession } from "../utils/sessionStorage";
+import { getNextWorkoutTargets } from "../utils/nextWorkoutTargets";
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "../components/icons";
 import type { WorkoutTemplate } from "../data/workouts";
 import type { SetData } from "../types/session";
 
@@ -23,12 +25,14 @@ export default function Workout({
     Record<string, SetData[]>
   >({});
 
-  // Exercises the user has actually edited this session — used only for
-  // the progress bar, so pre-loaded last-session data doesn't show as
-  // "completed" before it's been touched today.
+  // Which exercises have had at least one set logged this session -
+  // drives the segment bar. Set inside handleExerciseInteract, called
+  // from ExerciseLogger only when LOG SET is actually tapped.
   const [touchedExercises, setTouchedExercises] = useState<Set<string>>(
     new Set()
   );
+
+  const [index, setIndex] = useState(0);
 
   const handleExerciseChange = (
     exerciseName: string,
@@ -82,56 +86,105 @@ export default function Workout({
     onComplete(totalVolume, exercises.length, workout.estimatedMinutes);
   };
 
-  const completedCount = touchedExercises.size;
-  const totalCount = workout.exercises.length;
-  const progressPercent = totalCount
-    ? Math.min(100, Math.round((completedCount / totalCount) * 100))
-    : 0;
+  const total = workout.exercises.length;
+  const currentExercise = workout.exercises[index];
+  const isLast = index === total - 1;
+
+  // Smart, RPE-aware target for the exercise currently being logged -
+  // falls back to the static exercise.targetWeight when there's not
+  // yet enough history to compute one.
+  const smartTargets = getNextWorkoutTargets();
+  const smartTarget = smartTargets.find(
+    (target) => target.name === currentExercise.name
+  );
+  const resolvedTarget = smartTarget
+    ? smartTarget.targetWeight
+    : currentExercise.targetWeight;
+
+  const goPrev = () => {
+    setIndex((i) => Math.max(0, i - 1));
+  };
+
+  const goNextOrFinish = () => {
+    if (isLast) {
+      handleSaveWorkout();
+    } else {
+      setIndex((i) => Math.min(total - 1, i + 1));
+    }
+  };
 
   return (
     <div className="app">
-      <div className="page-header">
-        <h1 className="page-title">{workout.name}</h1>
+      <div className="pager-head">
+        <span className="pager-head-title">{workout.name}</span>
+        <span className="pager-head-count">
+          {index + 1} / {total}
+        </span>
       </div>
 
-      <div className="workout-progress-card">
-        <div className="workout-progress-label">
-          <span>
-            {completedCount} of {totalCount} exercises completed
-          </span>
-          <span>{progressPercent}%</span>
-        </div>
+      <div
+        className="seg-bar"
+        style={{ gridTemplateColumns: `repeat(${total}, 1fr)` }}
+      >
+        {workout.exercises.map((exercise, i) => {
+          const done = touchedExercises.has(exercise.name);
+          const isCurrent = i === index;
 
-        <div className="progress-bar-track">
-          <div
-            className="progress-bar-fill"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+          return (
+            <div
+              key={exercise.id}
+              className={
+                "seg-cell" +
+                (done
+                  ? " seg-cell-done"
+                  : isCurrent
+                  ? " seg-cell-current"
+                  : "")
+              }
+            />
+          );
+        })}
       </div>
 
-      {workout.exercises.map((exercise) => (
-        <ExerciseCard
-          key={exercise.id}
-          name={exercise.name}
-          targetWeight={exercise.targetWeight}
-          trackingType={exercise.trackingType}
-          onChange={handleExerciseChange}
-          onInteract={handleExerciseInteract}
-        />
-      ))}
-
-      <textarea
-        className="notes-input"
-        placeholder="How did today's workout feel?"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        rows={4}
+      <ExerciseLogger
+        key={currentExercise.id}
+        name={currentExercise.name}
+        targetWeight={resolvedTarget}
+        trackingType={currentExercise.trackingType}
+        sets={exerciseData[currentExercise.name] || []}
+        onChange={handleExerciseChange}
+        onInteract={handleExerciseInteract}
       />
 
-      <button className="finish-btn" onClick={handleSaveWorkout}>
-        Save Workout
-      </button>
+      {isLast && (
+        <textarea
+          className="input"
+          style={{ margin: "16px", width: "calc(100% - 32px)" }}
+          placeholder="How did today's workout feel?"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={4}
+        />
+      )}
+
+      <div className="pager-footer">
+        <button
+          className="pager-footer-btn pager-footer-prev"
+          onClick={goPrev}
+          disabled={index === 0}
+        >
+          <ArrowLeftIcon size={16} />
+          Prev
+        </button>
+
+        <button
+          className="pager-footer-btn pager-footer-next"
+          onClick={goNextOrFinish}
+        >
+          {isLast ? "Finish" : "Next Lift"}
+          {isLast ? <CheckIcon size={16} /> : <ArrowRightIcon size={16} />}
+        </button>
+      </div>
     </div>
   );
 }

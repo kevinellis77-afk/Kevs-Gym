@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { exportLatestSession } from "../utils/exportSession";
+import { getLatestSession } from "../utils/dashboardStats";
+import { getExerciseStats } from "../utils/exerciseStats";
+import { CopyIcon, ArrowRightIcon } from "../components/icons";
 
 type Props = {
   volume: number;
@@ -8,22 +11,16 @@ type Props = {
   onFinish: () => void;
 };
 
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      width="36"
-      height="36"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="8 12.5 11 15.5 16 9.5" />
-    </svg>
-  );
+function formatDate(dateValue: string) {
+  const parsed = new Date(dateValue);
+
+  if (isNaN(parsed.getTime())) {
+    return dateValue;
+  }
+
+  return parsed
+    .toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    .toUpperCase();
 }
 
 export default function WorkoutSummary({
@@ -34,6 +31,10 @@ export default function WorkoutSummary({
 }: Props) {
   const [copied, setCopied] = useState(false);
 
+  // saveSession() already ran before this screen mounts, so the
+  // session just completed is the latest one in storage.
+  const latestSession = getLatestSession() as any;
+
   const handleCopy = async () => {
     const success = await exportLatestSession();
 
@@ -43,49 +44,85 @@ export default function WorkoutSummary({
     }
   };
 
+  // An exercise counts as a fresh PR this session if its current
+  // all-time best weight was set on the date of this exact session -
+  // using the bestDate tracking added to exerciseStats.ts.
+  const prRows: {
+    exercise: string;
+    weight: number;
+    reps: number;
+  }[] = [];
+
+  if (latestSession?.exercises) {
+    latestSession.exercises.forEach((exercise: any) => {
+      const stats = getExerciseStats(exercise.name);
+
+      if (stats && stats.bestDate === latestSession.date) {
+        prRows.push({
+          exercise: exercise.name,
+          weight: stats.bestWeight,
+          reps: stats.bestReps,
+        });
+      }
+    });
+  }
+
   return (
     <div className="app">
-      <div className="summary-complete-card">
-        <div className="summary-complete-icon">
-          <CheckIcon />
+      <div className="poster poster-summary">
+        <div className="poster-eyebrow">
+          {latestSession?.workoutName || "Workout"}
+          {latestSession?.date
+            ? ` \u00b7 ${formatDate(latestSession.date)}`
+            : ""}
         </div>
 
-        <h1 className="summary-complete-title">Workout Complete</h1>
-
-        <p className="summary-complete-subtitle">
-          Nice work \u2014 logged and saved.
-        </p>
+        <h1 className="poster-title-lg">Done</h1>
       </div>
 
-      <div className="card">
-        <h2 className="section-heading">Session Summary</h2>
+      <div className="metric-grid-3">
+        <div className="metric-cell">
+          <span className="metric-label">Minutes</span>
+          <div className="metric-value-md">{duration}</div>
+        </div>
 
-        <div className="progress-stat-grid-3">
-          <div className="progress-stat">
-            <span className="progress-stat-label">Duration</span>
-            <div className="progress-stat-value">{duration} min</div>
+        <div className="metric-cell">
+          <span className="metric-label">Lifts</span>
+          <div className="metric-value-md">{exerciseCount}</div>
+        </div>
+
+        <div className="metric-cell">
+          <span className="metric-label">Volume</span>
+          <div className="metric-value-md">
+            {(volume / 1000).toFixed(1)}t
           </div>
+        </div>
+      </div>
 
-          <div className="progress-stat">
-            <span className="progress-stat-label">Exercises</span>
-            <div className="progress-stat-value">{exerciseCount}</div>
-          </div>
-
-          <div className="progress-stat">
-            <span className="progress-stat-label">Volume</span>
-            <div className="progress-stat-value">
-              {volume.toLocaleString()}kg
+      {prRows.length > 0 && (
+        <div className="pr-block">
+          {prRows.map((pr) => (
+            <div key={pr.exercise} className="pr-row">
+              <span className="tag-ink">New PR</span>
+              <span className="pr-row-text">
+                {pr.exercise} &mdash; {pr.weight}kg &times; {pr.reps}
+              </span>
             </div>
-          </div>
+          ))}
         </div>
-      </div>
+      )}
 
-      <button className="btn-secondary" onClick={handleCopy}>
-        {copied ? "Copied to Clipboard" : "Copy Session for Review"}
+      <button
+        className="btn-ghost btn-ghost-ruled"
+        onClick={handleCopy}
+      >
+        {copied ? "Copied to Clipboard" : "Copy Session"}
+        <CopyIcon size={18} />
       </button>
 
-      <button className="finish-btn" onClick={onFinish}>
-        Back to Dashboard
+      <button className="btn-ink" onClick={onFinish}>
+        Home
+        <ArrowRightIcon />
       </button>
     </div>
   );

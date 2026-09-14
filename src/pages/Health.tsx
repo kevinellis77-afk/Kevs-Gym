@@ -5,11 +5,38 @@ import {
   getHealthEntries,
 } from "../utils/healthStorage";
 
+import { getHealthDelta } from "../utils/healthDeltas";
 import ProgressChart from "../components/ProgressChart";
 import BPChart from "../components/BPChart";
+import { CheckIcon } from "../components/icons";
 
 // 15st 7lb, converted to kg. Update this if the goal changes.
 const WEIGHT_GOAL_KG = 98.4;
+
+const TWELVE_WEEKS_MS = 12 * 7 * 24 * 60 * 60 * 1000;
+
+function formatShortDate(dateValue: string) {
+  const parsed = new Date(dateValue);
+
+  if (isNaN(parsed.getTime())) {
+    return dateValue;
+  }
+
+  return parsed
+    .toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    .toUpperCase();
+}
+
+function formatDeltaText(
+  value: number | null,
+  suffix: string
+): string | null {
+  if (value === null) return null;
+  if (value === 0) return "No Change";
+
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value}${suffix} in 4 Weeks`;
+}
 
 export default function Health() {
   const [weight, setWeight] = useState("");
@@ -56,189 +83,274 @@ export default function Health() {
     setRestingHr("");
   };
 
-  const latestEntry = entries.length > 0 ? entries[0] : null;
-
-  const weightTrendData = [...entries]
-    .reverse()
-    .map((entry: any) => ({
-      date: entry.date,
-      weight: entry.weight,
-    }));
-
-  const bpTrendData = [...entries]
-    .reverse()
-    .map((entry: any) => ({
-      date: entry.date,
-      systolic: entry.systolic,
-      diastolic: entry.diastolic,
-    }));
-
+  const latestEntry = entries.length > 0 ? (entries[0] as any) : null;
   const previousEntries = entries.slice(1, 6);
+
+  const cutoff = Date.now() - TWELVE_WEEKS_MS;
+  const recentEntries = [...entries]
+    .filter((entry: any) => {
+      const entryTime = new Date(entry.date).getTime();
+      return !isNaN(entryTime) && entryTime >= cutoff;
+    })
+    .reverse();
+
+  const weightTrendData = recentEntries.map((entry: any) => ({
+    date: entry.date,
+    weight: entry.weight,
+  }));
+
+  const bpTrendData = recentEntries.map((entry: any) => ({
+    date: entry.date,
+    systolic: entry.systolic,
+    diastolic: entry.diastolic,
+  }));
+
+  const weightDelta = formatDeltaText(getHealthDelta("weight"), "");
+  const waistDelta = formatDeltaText(getHealthDelta("waist"), "");
+  const hrDelta = formatDeltaText(getHealthDelta("restingHr"), "");
+
+  const sysDelta = getHealthDelta("systolic");
+  const diaDelta = getHealthDelta("diastolic");
+  let bpDeltaText: string | null = null;
+  let bpDeltaFlat = true;
+
+  if (sysDelta !== null && diaDelta !== null) {
+    if (sysDelta === 0 && diaDelta === 0) {
+      bpDeltaText = "No Change";
+      bpDeltaFlat = true;
+    } else {
+      const sysText = `${sysDelta > 0 ? "+" : ""}${sysDelta}`;
+      const diaText = `${diaDelta > 0 ? "+" : ""}${diaDelta}`;
+      bpDeltaText = `${sysText}/${diaText} in 4 Weeks`;
+      bpDeltaFlat = false;
+    }
+  }
 
   return (
     <div className="app">
-      <div className="page-header">
-        <h1 className="page-title">Health Dashboard</h1>
+      <div className="screen-head">
+        <h1 className="screen-title">Health</h1>
+        <span className="screen-head-meta">
+          {latestEntry ? formatShortDate(latestEntry.date) : "--"}
+        </span>
       </div>
 
-      {/* LATEST METRICS */}
+      <div className="metric-grid">
+        <div className="metric-cell">
+          <span className="metric-label">Weight</span>
+          <div className="metric-value-lg">
+            {latestEntry ? latestEntry.weight : "--"}
+            {latestEntry && <span className="metric-unit">kg</span>}
+          </div>
+          {weightDelta && (
+            <span
+              className={
+                "metric-delta" +
+                (weightDelta === "No Change" ? " metric-delta-muted" : "")
+              }
+            >
+              {weightDelta}
+            </span>
+          )}
+        </div>
 
-      <div className="card">
-        <h2 className="section-heading">Latest Metrics</h2>
+        <div className="metric-cell">
+          <span className="metric-label">Waist</span>
+          <div className="metric-value-lg">
+            {latestEntry ? latestEntry.waist : "--"}
+            {latestEntry && <span className="metric-unit">in</span>}
+          </div>
+          {waistDelta && (
+            <span
+              className={
+                "metric-delta" +
+                (waistDelta === "No Change" ? " metric-delta-muted" : "")
+              }
+            >
+              {waistDelta}
+            </span>
+          )}
+        </div>
 
-        {!latestEntry && (
-          <p className="empty-state">
-            No measurements logged yet.
-          </p>
-        )}
+        <div className="metric-cell">
+          <span className="metric-label">Blood Pressure</span>
+          <div className="metric-value-lg">
+            {latestEntry
+              ? `${latestEntry.systolic}/${latestEntry.diastolic}`
+              : "--"}
+          </div>
+          {bpDeltaText && (
+            <span
+              className={
+                "metric-delta" + (bpDeltaFlat ? " metric-delta-muted" : "")
+              }
+            >
+              {bpDeltaText}
+            </span>
+          )}
+        </div>
 
-        {latestEntry && (
-          <div className="health-grid-display">
-            <div className="health-metric">
-              <span className="health-metric-label">Weight</span>
-              <div className="health-metric-value">
-                {latestEntry.weight}
-                <span className="health-metric-unit">kg</span>
-              </div>
-            </div>
+        <div className="metric-cell">
+          <span className="metric-label">Resting HR</span>
+          <div className="metric-value-lg">
+            {latestEntry ? latestEntry.restingHr : "--"}
+            {latestEntry && <span className="metric-unit">bpm</span>}
+          </div>
+          {hrDelta && (
+            <span
+              className={
+                "metric-delta" +
+                (hrDelta === "No Change" ? " metric-delta-muted" : "")
+              }
+            >
+              {hrDelta}
+            </span>
+          )}
+        </div>
+      </div>
 
-            <div className="health-metric">
-              <span className="health-metric-label">Waist</span>
-              <div className="health-metric-value">
-                {latestEntry.waist}
-                <span className="health-metric-unit">in</span>
-              </div>
-            </div>
+      <div className="chart-block">
+        <div className="chart-head">
+          <span className="chart-label">Weight &middot; 12 Weeks</span>
+        </div>
 
-            <div className="health-metric">
-              <span className="health-metric-label">Blood Pressure</span>
-              <div className="health-metric-value">
-                {latestEntry.systolic}/{latestEntry.diastolic}
-              </div>
-            </div>
+        <ProgressChart
+          data={weightTrendData}
+          height={100}
+          goalValue={WEIGHT_GOAL_KG}
+          goalLabel={`Goal ${WEIGHT_GOAL_KG}kg`}
+        />
 
-            <div className="health-metric">
-              <span className="health-metric-label">Resting HR</span>
-              <div className="health-metric-value">
-                {latestEntry.restingHr}
-                <span className="health-metric-unit">bpm</span>
-              </div>
-            </div>
+        {weightTrendData.length > 0 && (
+          <div className="chart-axis-labels">
+            <span>{formatShortDate(weightTrendData[0].date)}</span>
+            <span>
+              {formatShortDate(
+                weightTrendData[weightTrendData.length - 1].date
+              )}
+            </span>
           </div>
         )}
       </div>
 
-      {/* ADD MEASUREMENT */}
+      <div className="chart-block">
+        <div className="chart-head">
+          <span className="chart-label">
+            Blood Pressure &middot; 12 Weeks
+          </span>
+        </div>
 
-      <div className="card">
-        <h2 className="section-heading">Add Measurement</h2>
+        <BPChart data={bpTrendData} height={100} />
 
-        <div className="health-input-grid">
-          <div>
-            <label className="field-label">Weight (kg)</label>
-            <input
-              className="field-input"
-              type="number"
-              inputMode="decimal"
-              placeholder="0.0"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-            />
+        {bpTrendData.length > 0 && (
+          <div className="chart-axis-labels">
+            <span>{formatShortDate(bpTrendData[0].date)}</span>
+            <span>
+              {formatShortDate(bpTrendData[bpTrendData.length - 1].date)}
+            </span>
           </div>
+        )}
+      </div>
 
-          <div>
-            <label className="field-label">Waist (in)</label>
-            <input
-              className="field-input"
-              type="number"
-              inputMode="decimal"
-              placeholder="0.0"
-              value={waist}
-              onChange={(e) => setWaist(e.target.value)}
-            />
-          </div>
+      <span className="field-block-label">Log Today</span>
 
-          <div>
-            <label className="field-label">Systolic BP</label>
+      <div className="field-grid">
+        <div>
+          <label className="field-label">Weight KG</label>
+          <input
+            className="input"
+            type="number"
+            inputMode="decimal"
+            placeholder={
+              latestEntry ? String(latestEntry.weight) : "0.0"
+            }
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="field-label">Waist IN</label>
+          <input
+            className="input"
+            type="number"
+            inputMode="decimal"
+            placeholder={latestEntry ? String(latestEntry.waist) : "0.0"}
+            value={waist}
+            onChange={(e) => setWaist(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="field-label">BP Sys / Dia</label>
+          <div className="bp-input-pair">
             <input
-              className="field-input"
+              className="input"
               type="number"
               inputMode="numeric"
-              placeholder="0"
+              placeholder={
+                latestEntry ? String(latestEntry.systolic) : "0"
+              }
               value={systolic}
               onChange={(e) => setSystolic(e.target.value)}
             />
-          </div>
-
-          <div>
-            <label className="field-label">Diastolic BP</label>
+            <span className="bp-input-divider">/</span>
             <input
-              className="field-input"
+              className="input"
               type="number"
               inputMode="numeric"
-              placeholder="0"
+              placeholder={
+                latestEntry ? String(latestEntry.diastolic) : "0"
+              }
               value={diastolic}
               onChange={(e) => setDiastolic(e.target.value)}
             />
           </div>
-
-          <div>
-            <label className="field-label">Resting HR</label>
-            <input
-              className="field-input"
-              type="number"
-              inputMode="numeric"
-              placeholder="0"
-              value={restingHr}
-              onChange={(e) => setRestingHr(e.target.value)}
-            />
-          </div>
         </div>
 
-        <button
-          className="finish-btn"
-          onClick={handleSave}
-          disabled={!isValid}
-        >
-          Save Health Entry
-        </button>
-
-        {!isValid && (
-          <p className="field-hint">
-            Fill in all five fields to save an entry.
-          </p>
-        )}
+        <div>
+          <label className="field-label">Resting HR</label>
+          <input
+            className="input"
+            type="number"
+            inputMode="numeric"
+            placeholder={
+              latestEntry ? String(latestEntry.restingHr) : "0"
+            }
+            value={restingHr}
+            onChange={(e) => setRestingHr(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* HISTORICAL TREND */}
-
-      <ProgressChart
-        title="Weight Trend"
-        data={weightTrendData}
-        goalValue={WEIGHT_GOAL_KG}
-        goalLabel={`Goal: ${WEIGHT_GOAL_KG}kg`}
-      />
-
-      <BPChart data={bpTrendData} />
+      <button
+        className="btn-primary"
+        onClick={handleSave}
+        disabled={!isValid}
+      >
+        Save
+        <CheckIcon />
+      </button>
 
       {previousEntries.length > 0 && (
-        <div className="card">
-          <h2 className="section-heading">History</h2>
+        <>
+          <div className="list-header">
+            <span className="list-header-label">History</span>
+          </div>
 
           {previousEntries.map((entry: any) => (
-            <div key={entry.id} className="history-row">
-              <span className="history-date">{entry.date}</span>
+            <div key={entry.id} className="list-row">
+              <span className="list-row-sub">
+                {formatShortDate(entry.date)}
+              </span>
 
-              <div className="history-metrics">
-                <span>{entry.weight}kg</span>
-                <span>
-                  {entry.systolic}/{entry.diastolic}
-                </span>
-                <span>{entry.restingHr}bpm</span>
-              </div>
+              <span className="health-history-value">
+                {entry.weight}kg &middot; {entry.systolic}/
+                {entry.diastolic} &middot; {entry.restingHr}bpm
+              </span>
             </div>
           ))}
-        </div>
+        </>
       )}
     </div>
   );

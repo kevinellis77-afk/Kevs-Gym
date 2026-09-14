@@ -15,7 +15,7 @@ function daysAgo(dateValue: string): number | null {
   return (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
 }
 
-function sessionVolume(session: any): number {
+export function sessionVolume(session: any): number {
   if (!session.exercises) return 0;
 
   return session.exercises.reduce(

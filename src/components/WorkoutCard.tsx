@@ -1,3 +1,5 @@
+import { ArrowRightIcon } from "./icons";
+
 type WorkoutCardProps = {
   workoutName: string;
   exerciseCount: number;
@@ -12,17 +14,24 @@ export default function WorkoutCard({
   onStartWorkout,
 }: WorkoutCardProps) {
   return (
-    <div className="workout-card">
-      <span className="workout-card-eyebrow">Today's Workout</span>
+    <div className="poster">
+      <div className="poster-eyebrow">Today</div>
 
-      <h2 className="workout-card-title">{workoutName}</h2>
+      <h2 className="poster-title">{workoutName}</h2>
 
-      <p className="workout-card-meta">
-        {exerciseCount} Exercises &middot; {estimatedMinutes} Minutes
-      </p>
+      <div className="poster-meta">
+        <span>{exerciseCount} Exercises</span>
+        <span>{estimatedMinutes} Min</span>
+        <span>Next in Rotation</span>
+      </div>
 
-      <button className="btn-primary" onClick={onStartWorkout}>
-        Start Workout
+      <button
+        className="btn-primary-inverse"
+        style={{ marginTop: "20px" }}
+        onClick={onStartWorkout}
+      >
+        Start
+        <ArrowRightIcon />
       </button>
     </div>
   );
