@@ -6,6 +6,7 @@ import {
 } from "../utils/healthStorage";
 
 import { getHealthDelta } from "../utils/healthDeltas";
+import { parseHealthDate } from "../utils/parseHealthDate";
 import ProgressChart from "../components/ProgressChart";
 import BPChart from "../components/BPChart";
 import { CheckIcon } from "../components/icons";
@@ -16,7 +17,7 @@ const WEIGHT_GOAL_KG = 98.4;
 const TWELVE_WEEKS_MS = 12 * 7 * 24 * 60 * 60 * 1000;
 
 function formatShortDate(dateValue: string) {
-  const parsed = new Date(dateValue);
+  const parsed = parseHealthDate(dateValue);
 
   if (isNaN(parsed.getTime())) {
     return dateValue;
@@ -64,7 +65,7 @@ export default function Health() {
 
     const newEntry = {
       id: crypto.randomUUID(),
-      date: new Date().toLocaleDateString("en-GB"),
+      date: new Date().toISOString(),
       weight: Number(weight),
       waist: Number(waist),
       systolic: Number(systolic),
@@ -89,7 +90,7 @@ export default function Health() {
   const cutoff = Date.now() - TWELVE_WEEKS_MS;
   const recentEntries = [...entries]
     .filter((entry: any) => {
-      const entryTime = new Date(entry.date).getTime();
+      const entryTime = parseHealthDate(entry.date).getTime();
       return !isNaN(entryTime) && entryTime >= cutoff;
     })
     .reverse();

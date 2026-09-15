@@ -1,4 +1,5 @@
 import { getHealthEntries } from "./healthStorage";
+import { parseHealthDate } from "./parseHealthDate";
 
 type NumericField = "weight" | "waist" | "systolic" | "diastolic" | "restingHr";
 
@@ -11,14 +12,14 @@ type NumericField = "weight" | "waist" | "systolic" | "diastolic" | "restingHr";
  * stretch back 4 weeks.
  */
 function findReferenceEntry(priorEntries: any[], latestDate: string) {
-  const latestTime = new Date(latestDate).getTime();
+  const latestTime = parseHealthDate(latestDate).getTime();
 
   if (isNaN(latestTime)) return null;
 
   const targetTime = latestTime - 28 * 24 * 60 * 60 * 1000;
 
   for (const entry of priorEntries) {
-    const entryTime = new Date(entry.date).getTime();
+    const entryTime = parseHealthDate(entry.date).getTime();
 
     if (!isNaN(entryTime) && entryTime <= targetTime) {
       return entry;
