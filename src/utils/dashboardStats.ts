@@ -32,12 +32,24 @@ export function getLastWorkoutDaysAgo() {
 
   const today = new Date();
 
-  const diff =
-    today.getTime() - workoutDate.getTime();
-
-  return Math.floor(
-    diff / (1000 * 60 * 60 * 24)
+  // Compare calendar dates, not raw elapsed time - a workout logged
+  // late last night should read "1d ago" as soon as the date rolls
+  // over, even if fewer than 24 hours have technically passed.
+  const workoutDay = new Date(
+    workoutDate.getFullYear(),
+    workoutDate.getMonth(),
+    workoutDate.getDate()
   );
+
+  const todayDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const diff = todayDay.getTime() - workoutDay.getTime();
+
+  return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 
 export function getWorkoutStreak() {
