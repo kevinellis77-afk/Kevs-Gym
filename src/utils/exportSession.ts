@@ -37,6 +37,17 @@ function formatSessionText(session: any): string {
   }
 
   lines.push("");
+
+  if (session.type === "cardio") {
+    lines.push(`Type: ${session.cardioType || "-"}`);
+
+    if (session.cardioRpe) {
+      lines.push(`Effort: ${session.cardioRpe}/10`);
+    }
+
+    return lines.join("\n");
+  }
+
   lines.push("Exercises:");
 
   (session.exercises || []).forEach((exercise: any) => {

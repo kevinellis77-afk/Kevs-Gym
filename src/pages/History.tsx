@@ -82,6 +82,7 @@ export default function History() {
 
       {sessions.map((session: any) => {
         const isExpanded = session.id === expandedId;
+        const isCardio = session.type === "cardio";
         const volume = sessionVolume(session);
         const liftCount = session.exercises?.length || 0;
 
@@ -101,6 +102,12 @@ export default function History() {
                       </span>
                     )}
 
+                    {isCardio && session.cardioType && (
+                      <span className="tag-outline-ink">
+                        {session.cardioType}
+                      </span>
+                    )}
+
                     {session.feeling && (
                       <span
                         className={
@@ -116,12 +123,24 @@ export default function History() {
                 </div>
 
                 <div className="history-expanded-meta">
-                  {session.duration} MIN &middot; {liftCount} LIFTS
-                  &middot; {(volume / 1000).toFixed(1)}t
+                  {isCardio ? (
+                    <>
+                      {session.duration} MIN
+                      {session.cardioRpe && (
+                        <>&middot; Effort {session.cardioRpe}/10</>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {session.duration} MIN &middot; {liftCount} LIFTS
+                      &middot; {(volume / 1000).toFixed(1)}t
+                    </>
+                  )}
                 </div>
               </div>
 
-              {session.exercises?.map(
+              {!isCardio &&
+                session.exercises?.map(
                 (exercise: any, index: number) => {
                   const trackingType = getTrackingType(exercise.name);
 
@@ -166,11 +185,25 @@ export default function History() {
               </div>
 
               <div className="history-collapsed-meta">
-                {session.workoutName
-                  ? `${session.workoutName} \u00b7 `
-                  : ""}
-                {session.duration} MIN &middot;{" "}
-                {(volume / 1000).toFixed(1)}t
+                {isCardio ? (
+                  <>
+                    {session.cardioType
+                      ? `${session.cardioType} \u00b7 `
+                      : ""}
+                    {session.duration} MIN
+                    {session.cardioRpe
+                      ? ` \u00b7 Effort ${session.cardioRpe}/10`
+                      : ""}
+                  </>
+                ) : (
+                  <>
+                    {session.workoutName
+                      ? `${session.workoutName} \u00b7 `
+                      : ""}
+                    {session.duration} MIN &middot;{" "}
+                    {(volume / 1000).toFixed(1)}t
+                  </>
+                )}
               </div>
 
               {session.feeling === "Something Hurt" && (

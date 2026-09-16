@@ -3,6 +3,7 @@ import { getSessions } from "./sessionStorage";
 export type RollupStats = {
   sessionCount: number;
   totalVolume: number;
+  cardioMinutes: number;
 };
 
 function daysAgo(dateValue: string): number | null {
@@ -37,6 +38,15 @@ function summarize(sessions: any[]): RollupStats {
     sessionCount: sessions.length,
     totalVolume: sessions.reduce(
       (total, session) => total + sessionVolume(session),
+      0
+    ),
+    // Only cardio sessions carry a meaningful `duration` toward this -
+    // a lifting session's `duration` is its workout template's
+    // estimated length, not something to add up as "cardio time".
+    cardioMinutes: sessions.reduce(
+      (total, session) =>
+        total +
+        (session.type === "cardio" ? Number(session.duration) || 0 : 0),
       0
     ),
   };

@@ -22,20 +22,15 @@ type ProgressProps = {
   onSelectExercise?: (name: string) => void;
 };
 
-function volumeTrendText(
-  current: { totalVolume: number },
-  previous: { totalVolume: number }
-) {
-  if (previous.totalVolume === 0) {
-    return current.totalVolume > 0
+function trendText(current: number, previous: number): string {
+  if (previous === 0) {
+    return current > 0
       ? "First activity logged"
       : "No activity yet";
   }
 
   const change = Math.round(
-    ((current.totalVolume - previous.totalVolume) /
-      previous.totalVolume) *
-      100
+    ((current - previous) / previous) * 100
   );
 
   if (change === 0) return "Same as previous period";
@@ -89,6 +84,13 @@ export default function Progress({
     previousMonthly.totalVolume > 0 &&
     monthly.totalVolume >= previousMonthly.totalVolume;
 
+  const weeklyCardioImproved =
+    previousWeekly.cardioMinutes > 0 &&
+    weekly.cardioMinutes >= previousWeekly.cardioMinutes;
+  const monthlyCardioImproved =
+    previousMonthly.cardioMinutes > 0 &&
+    monthly.cardioMinutes >= previousMonthly.cardioMinutes;
+
   return (
     <div className="app">
       <div className="screen-head">
@@ -106,7 +108,7 @@ export default function Progress({
               "metric-delta" + (weeklyImproved ? "" : " metric-delta-muted")
             }
           >
-            {volumeTrendText(weekly, previousWeekly)}
+            {trendText(weekly.totalVolume, previousWeekly.totalVolume)}
           </span>
         </div>
 
@@ -121,7 +123,37 @@ export default function Progress({
               (monthlyImproved ? "" : " metric-delta-muted")
             }
           >
-            {volumeTrendText(monthly, previousMonthly)}
+            {trendText(monthly.totalVolume, previousMonthly.totalVolume)}
+          </span>
+        </div>
+
+        <div className="metric-cell">
+          <span className="metric-label">Cardio This Week</span>
+          <div className="metric-value-sm">
+            {weekly.cardioMinutes.toLocaleString()} min
+          </div>
+          <span
+            className={
+              "metric-delta" +
+              (weeklyCardioImproved ? "" : " metric-delta-muted")
+            }
+          >
+            {trendText(weekly.cardioMinutes, previousWeekly.cardioMinutes)}
+          </span>
+        </div>
+
+        <div className="metric-cell">
+          <span className="metric-label">Cardio This Month</span>
+          <div className="metric-value-sm">
+            {monthly.cardioMinutes.toLocaleString()} min
+          </div>
+          <span
+            className={
+              "metric-delta" +
+              (monthlyCardioImproved ? "" : " metric-delta-muted")
+            }
+          >
+            {trendText(monthly.cardioMinutes, previousMonthly.cardioMinutes)}
           </span>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Dashboard from "./pages/Dashboard";
 import Workout from "./pages/Workout";
 import WorkoutSummary from "./pages/WorkoutSummary";
+import CardioLog from "./pages/CardioLog";
 import History from "./pages/History";
 import Progress from "./pages/Progress";
 import Health from "./pages/Health";
@@ -32,7 +33,8 @@ export default function App() {
     useState<DetailOrigin>("RECORDS");
 
   // Screens that show the bottom tab bar. Workout, its post-session
-  // summary, and Exercise Detail are deliberately excluded.
+  // summary, Cardio logging, and Exercise Detail are deliberately
+  // excluded.
   const NAV_SCREENS: NavTab[] = [
     "dashboard",
     "progress",
@@ -87,6 +89,12 @@ export default function App() {
     );
   }
 
+  if (screen === "cardio") {
+    return (
+      <CardioLog onFinish={() => setScreen("dashboard")} />
+    );
+  }
+
   if (screen === "exerciseDetail" && selectedExercise) {
     return (
       <ExerciseDetail
@@ -118,6 +126,7 @@ export default function App() {
       {screen === "dashboard" && (
         <Dashboard
           onStartWorkout={() => setScreen("workout")}
+          onLogCardio={() => setScreen("cardio")}
           onSelectExercise={(name) =>
             openExerciseDetail(name, "RECORDS")
           }

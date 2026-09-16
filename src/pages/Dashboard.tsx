@@ -1,5 +1,6 @@
 import WorkoutCard from "../components/WorkoutCard";
 import ProgressChart from "../components/ProgressChart";
+import { ArrowRightIcon } from "../components/icons";
 
 import { getPersonalRecords } from "../utils/personalRecords";
 
@@ -8,7 +9,10 @@ import {
   getLastWorkoutDaysAgo,
 } from "../utils/dashboardStats";
 
-import { getLatestHealthEntry } from "../utils/healthStats";
+import {
+  getLatestWeight,
+  getLatestBloodPressure,
+} from "../utils/healthStats";
 
 import {
   getExerciseHistory,
@@ -23,16 +27,19 @@ type DashboardProps = {
   // Optional so this page still renders before App.tsx is wired up
   // for the Exercise Detail screen (that lands in a later batch).
   onSelectExercise?: (name: string) => void;
+  onLogCardio?: () => void;
 };
 
 export default function Dashboard({
   onStartWorkout,
   onSelectExercise,
+  onLogCardio,
 }: DashboardProps) {
   const workoutCount = getWorkoutCount();
   const lastWorkout = getLastWorkoutDaysAgo();
 
-  const health = getLatestHealthEntry();
+  const latestWeight = getLatestWeight();
+  const latestBp = getLatestBloodPressure();
 
   const personalRecords = getPersonalRecords();
 
@@ -70,6 +77,11 @@ export default function Dashboard({
         onStartWorkout={onStartWorkout}
       />
 
+      <button className="btn-ghost btn-ghost-ruled" onClick={onLogCardio}>
+        Log Cardio
+        <ArrowRightIcon size={18} />
+      </button>
+
       <div className="metric-grid">
         <div className="metric-cell">
           <span className="metric-label">Sessions</span>
@@ -90,15 +102,15 @@ export default function Dashboard({
         <div className="metric-cell">
           <span className="metric-label">Weight</span>
           <div className="metric-value">
-            {health ? health.weight : "--"}
-            {health && <span className="metric-unit">kg</span>}
+            {latestWeight !== null ? latestWeight : "--"}
+            {latestWeight !== null && <span className="metric-unit">kg</span>}
           </div>
         </div>
 
         <div className="metric-cell">
           <span className="metric-label">Blood Pressure</span>
           <div className="metric-value">
-            {health ? `${health.systolic}/${health.diastolic}` : "--"}
+            {latestBp ? `${latestBp.systolic}/${latestBp.diastolic}` : "--"}
           </div>
         </div>
       </div>
