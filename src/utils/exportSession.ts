@@ -32,6 +32,10 @@ function formatSessionText(session: any): string {
     lines.push(`Notes: ${session.notes}`);
   }
 
+  if (session.feeling) {
+    lines.push(`Feeling: ${session.feeling}`);
+  }
+
   lines.push("");
   lines.push("Exercises:");
 

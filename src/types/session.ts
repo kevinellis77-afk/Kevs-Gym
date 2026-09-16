@@ -19,4 +19,9 @@ export type WorkoutSession = {
   // sessions saved before rotation was added still type-check.
   workoutId?: string;
   workoutName?: string;
+  // Structured, one-tap readiness check, separate from per-set RPE -
+  // "Felt Good" | "Manageable" | "Struggled" | "Something Hurt".
+  // Optional: older sessions won't have it, and tapping one isn't
+  // required to finish a workout.
+  feeling?: string;
 };

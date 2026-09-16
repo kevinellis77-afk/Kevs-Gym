@@ -6,6 +6,13 @@ import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "../components/icons";
 import type { WorkoutTemplate } from "../data/workouts";
 import type { SetData } from "../types/session";
 
+const FEELING_OPTIONS = [
+  "Felt Good",
+  "Manageable",
+  "Struggled",
+  "Something Hurt",
+];
+
 type WorkoutProps = {
   workout: WorkoutTemplate;
   onComplete: (
@@ -20,10 +27,11 @@ export default function Workout({
   onComplete,
 }: WorkoutProps) {
   const [notes, setNotes] = useState("");
+  const [feeling, setFeeling] = useState<string | null>(null);
 
-  const [exerciseData, setExerciseData] = useState<
-    Record<string, SetData[]>
-  >({});
+  const [exerciseData, setExerciseData] = useState<Record<string, SetData[]>>(
+    {}
+  );
 
   // Which exercises have had at least one set logged this session -
   // drives the segment bar. Set inside handleExerciseInteract, called
@@ -69,6 +77,7 @@ export default function Workout({
       exercises,
       workoutId: workout.id,
       workoutName: workout.name,
+      ...(feeling && { feeling }),
     });
 
     const totalVolume = exercises.reduce(
@@ -157,14 +166,34 @@ export default function Workout({
       />
 
       {isLast && (
-        <textarea
-          className="input"
-          style={{ margin: "16px", width: "calc(100% - 32px)" }}
-          placeholder="How did today's workout feel?"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={4}
-        />
+        <>
+          <span className="field-block-label">How Did That Feel?</span>
+
+          <div className="chip-row">
+            {FEELING_OPTIONS.map((option) => (
+              <button
+                key={option}
+                className={
+                  "chip" + (feeling === option ? " chip-active" : "")
+                }
+                onClick={() =>
+                  setFeeling(feeling === option ? null : option)
+                }
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            className="input"
+            style={{ margin: "16px", width: "calc(100% - 32px)" }}
+            placeholder="How did today's workout feel?"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={4}
+          />
+        </>
       )}
 
       <div className="pager-footer">

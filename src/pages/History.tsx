@@ -94,11 +94,25 @@ export default function History() {
                     {formatSessionDate(session.date)}
                   </span>
 
-                  {session.workoutName && (
-                    <span className="tag-outline-ink">
-                      {session.workoutName}
-                    </span>
-                  )}
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {session.workoutName && (
+                      <span className="tag-outline-ink">
+                        {session.workoutName}
+                      </span>
+                    )}
+
+                    {session.feeling && (
+                      <span
+                        className={
+                          session.feeling === "Something Hurt"
+                            ? "tag-accent"
+                            : "tag-outline-ink"
+                        }
+                      >
+                        {session.feeling}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="history-expanded-meta">
@@ -158,6 +172,15 @@ export default function History() {
                 {session.duration} MIN &middot;{" "}
                 {(volume / 1000).toFixed(1)}t
               </div>
+
+              {session.feeling === "Something Hurt" && (
+                <span
+                  className="tag-accent"
+                  style={{ marginTop: "6px" }}
+                >
+                  Something Hurt
+                </span>
+              )}
             </div>
 
             <ChevronRightIcon size={18} />
