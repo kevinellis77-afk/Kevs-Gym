@@ -3,18 +3,22 @@ import { useState } from "react";
 import {
   saveHealthEntry,
   getHealthEntries,
+  getLatestEntryWithField,
 } from "../utils/healthStorage";
 
 import { getHealthDelta } from "../utils/healthDeltas";
 import { parseHealthDate } from "../utils/parseHealthDate";
 import ProgressChart from "../components/ProgressChart";
 import BPChart from "../components/BPChart";
+import SleepChart from "../components/SleepChart";
 import { CheckIcon } from "../components/icons";
 
 // 15st 7lb, converted to kg. Update this if the goal changes.
 const WEIGHT_GOAL_KG = 98.4;
 
 const TWELVE_WEEKS_MS = 12 * 7 * 24 * 60 * 60 * 1000;
+
+const SLEEP_OPTIONS = [1, 2, 3, 4, 5];
 
 function formatShortDate(dateValue: string) {
   const parsed = parseHealthDate(dateValue);
@@ -26,6 +30,25 @@ function formatShortDate(dateValue: string) {
   return parsed
     .toLocaleDateString("en-GB", { day: "numeric", month: "short" })
     .toUpperCase();
+}
+
+// Entries can be partial now, so build the history line from
+// whichever parts this entry actually has (weight was already the
+// only weight-like group shown here; sleep is included since a
+// sleep-only entry would otherwise render as blank).
+function formatHistoryValue(entry: any): string {
+  const parts: string[] = [];
+
+  if (entry.weight !== undefined) parts.push(`${entry.weight}kg`);
+  if (entry.systolic !== undefined && entry.diastolic !== undefined) {
+    parts.push(`${entry.systolic}/${entry.diastolic}`);
+  }
+  if (entry.restingHr !== undefined) parts.push(`${entry.restingHr}bpm`);
+  if (entry.sleepQuality !== undefined) {
+    parts.push(`Sleep ${entry.sleepQuality}/5`);
+  }
+
+  return parts.length > 0 ? parts.join(" \u00b7 ") : "--";
 }
 
 function formatDeltaText(
@@ -45,20 +68,25 @@ export default function Health() {
   const [systolic, setSystolic] = useState("");
   const [diastolic, setDiastolic] = useState("");
   const [restingHr, setRestingHr] = useState("");
+  const [sleepQuality, setSleepQuality] = useState<number | null>(null);
 
   const [entries, setEntries] = useState(getHealthEntries());
 
+  // Each metric can now be logged on its own - you don't need all
+  // five to save an entry. BP is the one exception: systolic and
+  // diastolic are only meaningful as a pair, so both or neither.
+  const hasWeight = weight.trim() !== "" && Number(weight) > 0;
+  const hasWaist = waist.trim() !== "" && Number(waist) > 0;
+  const hasSystolic = systolic.trim() !== "" && Number(systolic) > 0;
+  const hasDiastolic = diastolic.trim() !== "" && Number(diastolic) > 0;
+  const hasBp = hasSystolic && hasDiastolic;
+  const bpIncomplete = (hasSystolic || hasDiastolic) && !hasBp;
+  const hasRestingHr = restingHr.trim() !== "" && Number(restingHr) > 0;
+  const hasSleepQuality = sleepQuality !== null;
+
   const isValid =
-    weight.trim() !== "" &&
-    Number(weight) > 0 &&
-    waist.trim() !== "" &&
-    Number(waist) > 0 &&
-    systolic.trim() !== "" &&
-    Number(systolic) > 0 &&
-    diastolic.trim() !== "" &&
-    Number(diastolic) > 0 &&
-    restingHr.trim() !== "" &&
-    Number(restingHr) > 0;
+    (hasWeight || hasWaist || hasBp || hasRestingHr || hasSleepQuality) &&
+    !bpIncomplete;
 
   const handleSave = () => {
     if (!isValid) return;
@@ -66,11 +94,14 @@ export default function Health() {
     const newEntry = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
-      weight: Number(weight),
-      waist: Number(waist),
-      systolic: Number(systolic),
-      diastolic: Number(diastolic),
-      restingHr: Number(restingHr),
+      ...(hasWeight && { weight: Number(weight) }),
+      ...(hasWaist && { waist: Number(waist) }),
+      ...(hasBp && {
+        systolic: Number(systolic),
+        diastolic: Number(diastolic),
+      }),
+      ...(hasRestingHr && { restingHr: Number(restingHr) }),
+      ...(hasSleepQuality && { sleepQuality: sleepQuality as number }),
     };
 
     saveHealthEntry(newEntry);
@@ -82,9 +113,18 @@ export default function Health() {
     setSystolic("");
     setDiastolic("");
     setRestingHr("");
+    setSleepQuality(null);
   };
 
+  // "Latest" is now per-metric, not one shared entry - a weight-only
+  // entry logged today shouldn't blank out last week's BP reading.
   const latestEntry = entries.length > 0 ? (entries[0] as any) : null;
+  const latestWeightEntry = getLatestEntryWithField("weight");
+  const latestWaistEntry = getLatestEntryWithField("waist");
+  const latestBpEntry = getLatestEntryWithField("systolic");
+  const latestHrEntry = getLatestEntryWithField("restingHr");
+  const latestSleepEntry = getLatestEntryWithField("sleepQuality");
+
   const previousEntries = entries.slice(1, 6);
 
   const cutoff = Date.now() - TWELVE_WEEKS_MS;
@@ -95,16 +135,33 @@ export default function Health() {
     })
     .reverse();
 
-  const weightTrendData = recentEntries.map((entry: any) => ({
-    date: entry.date,
-    weight: entry.weight,
-  }));
+  // Each chart only plots entries that actually logged that metric -
+  // a waist-only entry shouldn't put a gap or a zero in the weight
+  // line.
+  const weightTrendData = recentEntries
+    .filter((entry: any) => entry.weight !== undefined)
+    .map((entry: any) => ({
+      date: entry.date,
+      weight: entry.weight,
+    }));
 
-  const bpTrendData = recentEntries.map((entry: any) => ({
-    date: entry.date,
-    systolic: entry.systolic,
-    diastolic: entry.diastolic,
-  }));
+  const bpTrendData = recentEntries
+    .filter(
+      (entry: any) =>
+        entry.systolic !== undefined && entry.diastolic !== undefined
+    )
+    .map((entry: any) => ({
+      date: entry.date,
+      systolic: entry.systolic,
+      diastolic: entry.diastolic,
+    }));
+
+  const sleepTrendData = recentEntries
+    .filter((entry: any) => entry.sleepQuality !== undefined)
+    .map((entry: any) => ({
+      date: entry.date,
+      sleepQuality: entry.sleepQuality,
+    }));
 
   const weightDelta = formatDeltaText(getHealthDelta("weight"), "");
   const waistDelta = formatDeltaText(getHealthDelta("waist"), "");
@@ -140,8 +197,8 @@ export default function Health() {
         <div className="metric-cell">
           <span className="metric-label">Weight</span>
           <div className="metric-value-lg">
-            {latestEntry ? latestEntry.weight : "--"}
-            {latestEntry && <span className="metric-unit">kg</span>}
+            {latestWeightEntry ? latestWeightEntry.weight : "--"}
+            {latestWeightEntry && <span className="metric-unit">kg</span>}
           </div>
           {weightDelta && (
             <span
@@ -158,8 +215,8 @@ export default function Health() {
         <div className="metric-cell">
           <span className="metric-label">Waist</span>
           <div className="metric-value-lg">
-            {latestEntry ? latestEntry.waist : "--"}
-            {latestEntry && <span className="metric-unit">in</span>}
+            {latestWaistEntry ? latestWaistEntry.waist : "--"}
+            {latestWaistEntry && <span className="metric-unit">in</span>}
           </div>
           {waistDelta && (
             <span
@@ -176,8 +233,8 @@ export default function Health() {
         <div className="metric-cell">
           <span className="metric-label">Blood Pressure</span>
           <div className="metric-value-lg">
-            {latestEntry
-              ? `${latestEntry.systolic}/${latestEntry.diastolic}`
+            {latestBpEntry
+              ? `${latestBpEntry.systolic}/${latestBpEntry.diastolic}`
               : "--"}
           </div>
           {bpDeltaText && (
@@ -194,8 +251,8 @@ export default function Health() {
         <div className="metric-cell">
           <span className="metric-label">Resting HR</span>
           <div className="metric-value-lg">
-            {latestEntry ? latestEntry.restingHr : "--"}
-            {latestEntry && <span className="metric-unit">bpm</span>}
+            {latestHrEntry ? latestHrEntry.restingHr : "--"}
+            {latestHrEntry && <span className="metric-unit">bpm</span>}
           </div>
           {hrDelta && (
             <span
@@ -253,6 +310,33 @@ export default function Health() {
         )}
       </div>
 
+      <div className="chart-block">
+        <div className="chart-head">
+          <span className="chart-label">
+            Sleep Quality &middot; 12 Weeks
+          </span>
+
+          {latestSleepEntry && (
+            <span className="chart-delta">
+              Last {latestSleepEntry.sleepQuality}/5
+            </span>
+          )}
+        </div>
+
+        <SleepChart data={sleepTrendData} height={64} />
+
+        {sleepTrendData.length > 0 && (
+          <div className="chart-axis-labels">
+            <span>{formatShortDate(sleepTrendData[0].date)}</span>
+            <span>
+              {formatShortDate(
+                sleepTrendData[sleepTrendData.length - 1].date
+              )}
+            </span>
+          </div>
+        )}
+      </div>
+
       <span className="field-block-label">Log Today</span>
 
       <div className="field-grid">
@@ -263,7 +347,7 @@ export default function Health() {
             type="number"
             inputMode="decimal"
             placeholder={
-              latestEntry ? String(latestEntry.weight) : "0.0"
+              latestWeightEntry ? String(latestWeightEntry.weight) : "0.0"
             }
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
@@ -276,7 +360,9 @@ export default function Health() {
             className="input"
             type="number"
             inputMode="decimal"
-            placeholder={latestEntry ? String(latestEntry.waist) : "0.0"}
+            placeholder={
+              latestWaistEntry ? String(latestWaistEntry.waist) : "0.0"
+            }
             value={waist}
             onChange={(e) => setWaist(e.target.value)}
           />
@@ -290,7 +376,7 @@ export default function Health() {
               type="number"
               inputMode="numeric"
               placeholder={
-                latestEntry ? String(latestEntry.systolic) : "0"
+                latestBpEntry ? String(latestBpEntry.systolic) : "0"
               }
               value={systolic}
               onChange={(e) => setSystolic(e.target.value)}
@@ -301,7 +387,7 @@ export default function Health() {
               type="number"
               inputMode="numeric"
               placeholder={
-                latestEntry ? String(latestEntry.diastolic) : "0"
+                latestBpEntry ? String(latestBpEntry.diastolic) : "0"
               }
               value={diastolic}
               onChange={(e) => setDiastolic(e.target.value)}
@@ -316,13 +402,34 @@ export default function Health() {
             type="number"
             inputMode="numeric"
             placeholder={
-              latestEntry ? String(latestEntry.restingHr) : "0"
+              latestHrEntry ? String(latestHrEntry.restingHr) : "0"
             }
             value={restingHr}
             onChange={(e) => setRestingHr(e.target.value)}
           />
         </div>
       </div>
+
+      <span className="rpe-block-label">Sleep Quality</span>
+
+      <div className="rpe-grid-5">
+        {SLEEP_OPTIONS.map((value) => (
+          <button
+            key={value}
+            className={
+              "rpe-btn" +
+              (sleepQuality === value ? " rpe-btn-active" : "")
+            }
+            onClick={() =>
+              setSleepQuality(sleepQuality === value ? null : value)
+            }
+          >
+            {value}
+          </button>
+        ))}
+      </div>
+
+      <p className="field-hint">1 Poor &middot; 5 Great</p>
 
       <button
         className="btn-primary"
@@ -346,8 +453,7 @@ export default function Health() {
               </span>
 
               <span className="health-history-value">
-                {entry.weight}kg &middot; {entry.systolic}/
-                {entry.diastolic} &middot; {entry.restingHr}bpm
+                {formatHistoryValue(entry)}
               </span>
             </div>
           ))}

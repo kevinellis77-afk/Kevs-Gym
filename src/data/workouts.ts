@@ -10,6 +10,12 @@ export type WorkoutExercise = {
   // (e.g. Suitcase Hold) — the value still goes in the same "reps"
   // slot in SetData, this only changes how the UI labels it.
   trackingType?: "reps" | "duration";
+  // How much weight to add when nextWorkoutTargets.ts decides you're
+  // ready to progress. Defaults to 2.5kg when omitted - the smallest
+  // step the gym's cable stacks actually move in, so it also covers
+  // isolation/single-joint lifts that shouldn't jump further than
+  // that in one go. Bigger compound lower-body lifts use 5kg.
+  incrementKg?: number;
 };
 
 export type WorkoutTemplate = {

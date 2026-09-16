@@ -799,6 +799,14 @@
      padding: 0 16px 16px;
      border-bottom: 2px solid var(--color-divider);
    }
+
+   .rpe-grid-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+    padding: 0 16px 16px;
+    border-bottom: 2px solid var(--color-divider);
+  }
    
    .rpe-btn {
      height: 46px;

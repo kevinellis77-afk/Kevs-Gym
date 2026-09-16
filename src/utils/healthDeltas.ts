@@ -35,9 +35,16 @@ function findReferenceEntry(priorEntries: any[], latestDate: string) {
  * Signed difference between the latest health entry and the entry
  * from ~4 weeks prior, for a given field. Returns null when there
  * isn't enough history to compare (fewer than 2 entries).
+ *
+ * Entries can be partial now, so this only looks at entries that
+ * actually logged `field` - an entry that only recorded, say,
+ * waist doesn't count as "no BP change" and doesn't get skipped
+ * over incorrectly either.
  */
 export function getHealthDelta(field: NumericField): number | null {
-  const entries = getHealthEntries();
+  const entries = getHealthEntries().filter(
+    (entry: any) => entry[field] !== undefined && entry[field] !== null
+  );
 
   if (entries.length < 2) return null;
 

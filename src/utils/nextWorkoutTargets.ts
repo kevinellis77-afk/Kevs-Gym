@@ -30,12 +30,6 @@ export function getNextWorkoutTargets(): WorkoutTarget[] {
 
   const targets: WorkoutTarget[] = [];
 
-  const lowerBodyExercises = [
-    "Leg Press",
-    "Leg Extension",
-    "Seated Leg Curl",
-  ];
-
   upcomingWorkout.exercises.forEach((exercise) => {
     // Walk back through sessions (newest first) collecting the best
     // set from each one that actually logged this exercise - up to
@@ -71,9 +65,7 @@ export function getNextWorkoutTargets(): WorkoutTarget[] {
 
     const [latest, previous] = recentBests;
 
-    const increase = lowerBodyExercises.includes(exercise.name)
-      ? 5
-      : 2.5;
+    const increase = exercise.incrementKg ?? 2.5;
 
     let targetWeight: number;
     let status: WorkoutTarget["status"];
