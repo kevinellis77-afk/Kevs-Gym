@@ -1,9 +1,10 @@
 import { useState } from "react";
 import ExerciseLogger from "../components/ExerciseLogger";
 import { saveSession } from "../utils/sessionStorage";
-import { getNextWorkoutTargets } from "../utils/nextWorkoutTargets";
+import { getSmartTargetForExercise } from "../utils/nextWorkoutTargets";
+import { getSubstitutesFor } from "../utils/exerciseSubstitutions";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "../components/icons";
-import type { WorkoutTemplate } from "../data/workouts";
+import type { WorkoutTemplate, WorkoutExercise } from "../data/workouts";
 import type { SetData } from "../types/session";
 
 const FEELING_OPTIONS = [
@@ -29,9 +30,7 @@ export default function Workout({
   const [notes, setNotes] = useState("");
   const [feeling, setFeeling] = useState<string | null>(null);
 
-  const [exerciseData, setExerciseData] = useState<Record<string, SetData[]>>(
-    {}
-  );
+  const [exerciseData, setExerciseData] = useState<Record<string, SetData[]>>({});
 
   // Which exercises have had at least one set logged this session -
   // drives the segment bar. Set inside handleExerciseInteract, called
@@ -42,6 +41,15 @@ export default function Workout({
 
   const [index, setIndex] = useState(0);
 
+  // Mid-session exercise substitutions, keyed by the ORIGINAL
+  // exercise's id (never the workout template itself - that stays
+  // untouched, so the next time this workout comes round in
+  // rotation it's back to its normal exercise list). A session that
+  // substitutes Leg Press for Goblet Squat logs sets under "Goblet
+  // Squat" in its own right, not folded into Leg Press's history -
+  // they're genuinely different lifts with different capacities, so
+  // that's what keeps PRs and progression targets honest for both.
+  const [substitutions, setSubstitutions] = useState<Record<string, WorkoutExercise>>({});
   const handleExerciseChange = (
     exerciseName: string,
     sets: SetData[]
@@ -96,16 +104,33 @@ export default function Workout({
   };
 
   const total = workout.exercises.length;
-  const currentExercise = workout.exercises[index];
+  const baseExercise = workout.exercises[index];
+  const currentExercise = substitutions[baseExercise.id] ?? baseExercise;
   const isLast = index === total - 1;
+
+  const substitutes = getSubstitutesFor(baseExercise.id);
+  const isSubstituted = currentExercise.id !== baseExercise.id;
+
+  const handleSubstitute = (exercise: WorkoutExercise | null) => {
+    setSubstitutions((prev) => {
+      const next = { ...prev };
+
+      if (exercise) {
+        next[baseExercise.id] = exercise;
+      } else {
+        delete next[baseExercise.id];
+      }
+
+      return next;
+    });
+  };
 
   // Smart, RPE-aware target for the exercise currently being logged -
   // falls back to the static exercise.targetWeight when there's not
-  // yet enough history to compute one.
-  const smartTargets = getNextWorkoutTargets();
-  const smartTarget = smartTargets.find(
-    (target) => target.name === currentExercise.name
-  );
+  // yet enough history to compute one. Uses currentExercise (not
+  // baseExercise) so a substitute gets its own real progression
+  // target rather than one borrowed from the exercise it replaced.
+  const smartTarget = getSmartTargetForExercise(currentExercise);
   const resolvedTarget = smartTarget
     ? smartTarget.targetWeight
     : currentExercise.targetWeight;
@@ -136,7 +161,8 @@ export default function Workout({
         style={{ gridTemplateColumns: `repeat(${total}, 1fr)` }}
       >
         {workout.exercises.map((exercise, i) => {
-          const done = touchedExercises.has(exercise.name);
+          const effectiveExercise = substitutions[exercise.id] ?? exercise;
+          const done = touchedExercises.has(effectiveExercise.name);
           const isCurrent = i === index;
 
           return (
@@ -163,6 +189,10 @@ export default function Workout({
         sets={exerciseData[currentExercise.name] || []}
         onChange={handleExerciseChange}
         onInteract={handleExerciseInteract}
+        originalName={baseExercise.name}
+        substitutes={substitutes}
+        isSubstituted={isSubstituted}
+        onSubstitute={handleSubstitute}
       />
 
       {isLast && (

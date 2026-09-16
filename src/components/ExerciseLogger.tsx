@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { getLastExerciseData } from "../utils/lastWorkoutData";
 import { getPersonalRecords } from "../utils/personalRecords";
+import RestTimer from "./RestTimer";
 import { CheckIcon } from "./icons";
+import type { WorkoutExercise } from "../data/workouts";
 
 type SetData = {
   weight: string;
@@ -21,6 +23,12 @@ type Props = {
   sets: SetData[];
   onChange: (exerciseName: string, sets: SetData[]) => void;
   onInteract?: (exerciseName: string) => void;
+  // Substitution (Workout.tsx owns the actual swap state - this
+  // component just presents the picker and reports taps up).
+  originalName: string;
+  substitutes: WorkoutExercise[];
+  isSubstituted: boolean;
+  onSubstitute: (exercise: WorkoutExercise | null) => void;
 };
 
 const RPE_OPTIONS = [5, 6, 7, 8, 9, 10];
@@ -32,12 +40,13 @@ export default function ExerciseLogger({
   sets,
   onChange,
   onInteract,
+  originalName,
+  substitutes,
+  isSubstituted,
+  onSubstitute,
 }: Props) {
   const previousWorkout = getLastExerciseData(name);
-  const personalRecords = getPersonalRecords() as Record<
-    string,
-    { best: number }
-  >;
+  const personalRecords = getPersonalRecords() as Record<string, { best: number }>;
   const record = personalRecords[name];
 
   const cleanWeight = (value: string) =>
@@ -67,6 +76,35 @@ export default function ExerciseLogger({
     : "";
   const lastReps = previousWorkout?.sets?.[0]?.reps || "";
 
+  const [showRest, setShowRest] = useState(false);
+  const [showSwap, setShowSwap] = useState(false);
+
+  // Original always appears first when currently substituted (as a
+  // "revert" option), then whichever alternatives aren't the exercise
+  // currently active - so you can swap again or switch back, but
+  // never see the one you're already on offered as an option.
+  const swapOptions: { key: string; label: string; exercise: WorkoutExercise | null }[] =
+    substitutes
+      .filter((exercise) => exercise.name !== name)
+      .map((exercise) => ({
+        key: exercise.id,
+        label: exercise.name,
+        exercise,
+      }));
+
+  if (isSubstituted) {
+    swapOptions.unshift({
+      key: "original",
+      label: originalName,
+      exercise: null,
+    });
+  }
+
+  const handleSwapTap = (exercise: WorkoutExercise | null) => {
+    onSubstitute(exercise);
+    setShowSwap(false);
+  };
+
   const handleLogSet = () => {
     const newSet: SetData = {
       weight: String(weight),
@@ -76,11 +114,21 @@ export default function ExerciseLogger({
 
     onChange(name, [...sets, newSet]);
     onInteract?.(name);
+    setShowRest(true);
   };
 
   return (
     <>
       <h2 className="exercise-poster-title">{name}</h2>
+
+      {isSubstituted && (
+        <span
+          className="tag-ink"
+          style={{ display: "inline-block", margin: "10px 0 0 16px" }}
+        >
+          Swapped from {originalName}
+        </span>
+      )}
 
       <div className="exercise-meta-row">
         <div>
@@ -108,6 +156,31 @@ export default function ExerciseLogger({
           </span>
         </div>
       </div>
+
+      {substitutes.length > 0 && (
+        <>
+          <button
+            className="btn-ghost btn-ghost-ruled"
+            onClick={() => setShowSwap((s) => !s)}
+          >
+            {isSubstituted ? "Change Substitute" : "Swap Exercise"}
+          </button>
+
+          {showSwap && (
+            <div className="chip-row">
+              {swapOptions.map((option) => (
+                <button
+                  key={option.key}
+                  className="chip"
+                  onClick={() => handleSwapTap(option.exercise)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
       <div className="stepper-row">
         <div className="stepper-cell">
@@ -176,6 +249,13 @@ export default function ExerciseLogger({
           </button>
         ))}
       </div>
+
+      {showRest && (
+        <RestTimer
+          key={sets.length}
+          onDone={() => setShowRest(false)}
+        />
+      )}
 
       {sets.length > 0 &&
         sets.map((set, index) => (

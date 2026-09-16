@@ -817,6 +817,33 @@
     padding: 0 16px 16px;
     border-bottom: 2px solid var(--color-divider);
   }
+
+     /* ============================================================
+      REST TIMER
+      ============================================================ */
+   
+      .rest-timer {
+        border-bottom: 2px solid var(--color-divider);
+      }
+      
+      .rest-timer-value {
+        font: 800 56px/1 var(--font);
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+        padding: 8px 0 16px;
+      }
+      
+      .rest-timer-track {
+        height: 8px;
+        margin: 0 16px 16px;
+        background: var(--color-rule-soft);
+      }
+      
+      .rest-timer-fill {
+        height: 100%;
+        background: var(--color-accent);
+        transition: width 1s linear;
+      }
    
    .rpe-btn {
      height: 46px;

@@ -16,7 +16,14 @@ import {
   getMonthlyRollup,
   getPreviousMonthlyRollup,
 } from "../utils/progressRollups";
+import {
+  getRollingWeeklyCounts,
+  getDaysSinceLastSession,
+  isOffTrack,
+  WEEKLY_SESSION_TARGET,
+} from "../utils/consistency";
 import ProgressChart from "../components/ProgressChart";
+import ConsistencyChart from "../components/ConsistencyChart";
 
 type ProgressProps = {
   onSelectExercise?: (name: string) => void;
@@ -91,11 +98,27 @@ export default function Progress({
     previousMonthly.cardioMinutes > 0 &&
     monthly.cardioMinutes >= previousMonthly.cardioMinutes;
 
+  const weeklyCounts = getRollingWeeklyCounts(8);
+  const daysSinceLast = getDaysSinceLastSession();
+  const offTrack = isOffTrack();
+
   return (
     <div className="app">
       <div className="screen-head">
         <h1 className="screen-title">Progress</h1>
       </div>
+
+      {offTrack && (
+        <div className="pr-block">
+          <div className="pr-row">
+            <span className="tag-accent">Off Track</span>
+            <span className="pr-row-text">
+              {daysSinceLast} days since your last session &mdash;{" "}
+              {WEEKLY_SESSION_TARGET}/week target
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="metric-grid">
         <div className="metric-cell">
@@ -156,6 +179,30 @@ export default function Progress({
             {trendText(monthly.cardioMinutes, previousMonthly.cardioMinutes)}
           </span>
         </div>
+      </div>
+
+      <div className="chart-block">
+        <div className="chart-head">
+          <span className="chart-label">
+            Consistency &middot; Last 8 Weeks
+          </span>
+          <span className="chart-delta">
+            Target {WEEKLY_SESSION_TARGET}/wk
+          </span>
+        </div>
+
+        <ConsistencyChart
+          data={weeklyCounts}
+          target={WEEKLY_SESSION_TARGET}
+          height={90}
+        />
+
+        {weeklyCounts.length > 0 && (
+          <div className="chart-axis-labels">
+            <span>{weeklyCounts[0].label}</span>
+            <span>{weeklyCounts[weeklyCounts.length - 1].label}</span>
+          </div>
+        )}
       </div>
 
       <div className="chip-row">
