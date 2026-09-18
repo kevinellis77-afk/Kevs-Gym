@@ -78,7 +78,7 @@ import {
                 borderRadius: 0,
                 fontSize: 12,
               }}
-              formatter={(value: number) => [
+              formatter={(value) => [
                 `${value} session${value === 1 ? "" : "s"}`,
                 "",
               ]}
