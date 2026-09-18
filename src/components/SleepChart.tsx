@@ -61,7 +61,7 @@ import {
                 borderRadius: 0,
                 fontSize: 12,
               }}
-              formatter={(value:> [`${value}/5`, "Sleep"]}
+              formatter={(value) => [`${value}/5`, "Sleep"]}
             />
   
             <Bar dataKey="sleepQuality" fill="#201e1d" />
