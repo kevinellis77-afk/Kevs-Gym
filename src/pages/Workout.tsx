@@ -1,11 +1,13 @@
 import { useState } from "react";
 import ExerciseLogger from "../components/ExerciseLogger";
+import CardioBlockForm from "../components/CardioBlockForm";
 import { saveSession } from "../utils/sessionStorage";
 import { getSmartTargetForExercise } from "../utils/nextWorkoutTargets";
 import { getSubstitutesFor } from "../utils/exerciseSubstitutions";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon } from "../components/icons";
+import { sessionTonnage } from "../utils/volume";
+import { ArrowLeftIcon, ArrowRightIcon } from "../components/icons";
 import type { WorkoutTemplate, WorkoutExercise } from "../data/workouts";
-import type { SetData } from "../types/session";
+import type { CardioBlock, SetData, WorkoutSession } from "../types/session";
 
 const FEELING_OPTIONS = [
   "Felt Good",
@@ -14,11 +16,17 @@ const FEELING_OPTIONS = [
   "Something Hurt",
 ];
 
+// warmup -> lifting -> cooldown -> saved. Warm-up and cool-down are
+// both skippable; the lifting pager in between is unchanged.
+type Phase = "warmup" | "lifting" | "cooldown";
+
 type WorkoutProps = {
   workout: WorkoutTemplate;
   onComplete: (
     volume: number,
     exerciseCount: number,
+    // Minutes actually spent lifting - excludes warm-up/cool-down,
+    // which WorkoutSummary reads off the saved session itself.
     duration: number
   ) => void;
 };
@@ -40,6 +48,16 @@ export default function Workout({
   );
 
   const [index, setIndex] = useState(0);
+
+  const [phase, setPhase] = useState<Phase>("warmup");
+  const [warmUp, setWarmUp] = useState<CardioBlock | null>(null);
+
+  // Lifting time is measured, not estimated: the clock starts when
+  // the warm-up screen is left (saved or skipped) and stops when
+  // Finish is tapped on the last lift. Going back from cool-down to
+  // the lifts and finishing again moves the stop time on.
+  const [liftStartedAt, setLiftStartedAt] = useState<number | null>(null);
+  const [liftEndedAt, setLiftEndedAt] = useState<number | null>(null);
 
   // Mid-session exercise substitutions, keyed by the ORIGINAL
   // exercise's id (never the workout template itself - that stays
@@ -69,7 +87,14 @@ export default function Workout({
     });
   };
 
-  const handleSaveWorkout = () => {
+  const liftingMinutes = (): number => {
+    if (liftStartedAt === null) return workout.estimatedMinutes;
+
+    const end = liftEndedAt ?? Date.now();
+    return Math.max(1, Math.round((end - liftStartedAt) / 60000));
+  };
+
+  const handleSaveWorkout = (finalCoolDown: CardioBlock | null) => {
     const exercises = Object.entries(exerciseData).map(
       ([name, sets]) => ({
         name,
@@ -77,30 +102,30 @@ export default function Workout({
       })
     );
 
-    saveSession({
+    const duration = liftingMinutes();
+
+    const session: WorkoutSession = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
       notes,
-      duration: workout.estimatedMinutes,
+      duration,
       exercises,
       workoutId: workout.id,
       workoutName: workout.name,
       ...(feeling && { feeling }),
-    });
+      ...(warmUp && { warmUp }),
+      ...(finalCoolDown && { coolDown: finalCoolDown }),
+    };
 
-    const totalVolume = exercises.reduce(
-      (exerciseTotal, exercise) =>
-        exerciseTotal +
-        exercise.sets.reduce(
-          (setTotal, set) =>
-            setTotal +
-            Number(set.weight || 0) * Number(set.reps || 0),
-          0
-        ),
-      0
-    );
+    saveSession(session);
 
-    onComplete(totalVolume, exercises.length, workout.estimatedMinutes);
+    onComplete(sessionTonnage(session), exercises.length, duration);
+  };
+
+  const startLifting = (block: CardioBlock | null) => {
+    setWarmUp(block);
+    setLiftStartedAt(Date.now());
+    setPhase("lifting");
   };
 
   const total = workout.exercises.length;
@@ -141,11 +166,51 @@ export default function Workout({
 
   const goNextOrFinish = () => {
     if (isLast) {
-      handleSaveWorkout();
+      setLiftEndedAt(Date.now());
+      setPhase("cooldown");
     } else {
       setIndex((i) => Math.min(total - 1, i + 1));
     }
   };
+
+  if (phase === "warmup") {
+    return (
+      <div className="app">
+        <div className="pager-head">
+          <span className="pager-head-title">{workout.name}</span>
+          <span className="pager-head-count">Warm-Up</span>
+        </div>
+
+        <CardioBlockForm
+          initial={warmUp}
+          saveLabel="Start Lifting"
+          onSave={(block) => startLifting(block)}
+          onSkip={() => startLifting(null)}
+          skipLabel="Skip Warm-Up"
+        />
+      </div>
+    );
+  }
+
+  if (phase === "cooldown") {
+    return (
+      <div className="app">
+        <div className="pager-head">
+          <span className="pager-head-title">{workout.name}</span>
+          <span className="pager-head-count">Cool-Down</span>
+        </div>
+
+        <CardioBlockForm
+          saveLabel="Save Workout"
+          onSave={(block) => handleSaveWorkout(block)}
+          onSkip={() => handleSaveWorkout(null)}
+          skipLabel="Skip & Save"
+          onBack={() => setPhase("lifting")}
+          backLabel="Back to Lifts"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -186,6 +251,7 @@ export default function Workout({
         name={currentExercise.name}
         targetWeight={resolvedTarget}
         trackingType={currentExercise.trackingType}
+        unilateral={currentExercise.unilateral}
         sets={exerciseData[currentExercise.name] || []}
         onChange={handleExerciseChange}
         onInteract={handleExerciseInteract}
@@ -240,8 +306,8 @@ export default function Workout({
           className="pager-footer-btn pager-footer-next"
           onClick={goNextOrFinish}
         >
-          {isLast ? "Finish" : "Next Lift"}
-          {isLast ? <CheckIcon size={16} /> : <ArrowRightIcon size={16} />}
+          {isLast ? "Cool-Down" : "Next Lift"}
+          <ArrowRightIcon size={16} />
         </button>
       </div>
     </div>

@@ -40,7 +40,8 @@ export const workoutC = [
     name: "Suitcase Hold",
     targetWeight: 16,
     trackingType: "duration",
-    incrementKg: 2.5
+    incrementKg: 2.5,
+    unilateral: true
   },
   {
     id: "cabletricep",

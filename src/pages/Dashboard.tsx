@@ -77,11 +77,6 @@ export default function Dashboard({
         onStartWorkout={onStartWorkout}
       />
 
-      <button className="btn-ghost btn-ghost-ruled" onClick={onLogCardio}>
-        Log Cardio
-        <ArrowRightIcon size={18} />
-      </button>
-
       <div className="metric-grid">
         <div className="metric-cell">
           <span className="metric-label">Sessions</span>
@@ -114,6 +109,14 @@ export default function Dashboard({
           </div>
         </div>
       </div>
+
+      {/* Cardio-only days. Cardio around a workout is logged inside the
+          workout as its warm-up/cool-down instead, so this sits below
+          the metrics rather than straight under Start Workout. */}
+      <button className="btn-ghost btn-ghost-ruled" onClick={onLogCardio}>
+        Cardio-Only Day
+        <ArrowRightIcon size={18} />
+      </button>
 
       <div className="chart-block">
         <div className="chart-head">

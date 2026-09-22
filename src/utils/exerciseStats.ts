@@ -1,4 +1,6 @@
 import { getSessions } from "./sessionStorage";
+import { getTrackingType } from "./exerciseMeta";
+import { exerciseTonnage } from "./volume";
 
 export type ExerciseStats = {
   bestWeight: number;
@@ -25,6 +27,12 @@ export type ExerciseStats = {
  * always describes one real lift, not the best weight ever combined
  * with the best rep count ever (which could come from different
  * sessions at different weights).
+ *
+ * Timed holds (trackingType "duration") contribute 0 to `volume` and
+ * 0 to `estimated1RM` - their second field is seconds, not reps, so
+ * neither weight × seconds nor a rep-based 1RM formula means anything.
+ * bestReps still holds the seconds of the best set, which is what
+ * Exercise Detail shows as "Best Hold".
  */
 export function getAllExerciseStats(): Record<string, ExerciseStats> {
   const sessions = getSessions();
@@ -50,15 +58,15 @@ export function getAllExerciseStats(): Record<string, ExerciseStats> {
         Number(current.weight) > Number(best.weight) ? current : best
       );
 
-      const volume = validSets.reduce(
-        (total: number, set: any) =>
-          total + Number(set.weight) * Number(set.reps),
-        0
-      );
+      const isTimed = getTrackingType(exercise.name) === "duration";
 
-      const estimated1RM = Math.round(
-        Number(bestSet.weight) * (1 + Number(bestSet.reps) / 30)
-      );
+      const volume = exerciseTonnage(exercise);
+
+      const estimated1RM = isTimed
+        ? 0
+        : Math.round(
+            Number(bestSet.weight) * (1 + Number(bestSet.reps) / 30)
+          );
 
       if (!exerciseStats[exercise.name]) {
         exerciseStats[exercise.name] = {

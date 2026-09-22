@@ -1,4 +1,5 @@
 import { getSessions } from "./sessionStorage";
+import { sessionTonnage, attachedCardioMinutes } from "./volume";
 
 export type RollupStats = {
   sessionCount: number;
@@ -16,21 +17,13 @@ function daysAgo(dateValue: string): number | null {
   return (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
 }
 
+/**
+ * Kept under its old name so existing imports keep working - the
+ * actual rules (timed holds excluded, both sides of unilateral lifts
+ * counted) live in utils/volume.ts.
+ */
 export function sessionVolume(session: any): number {
-  if (!session.exercises) return 0;
-
-  return session.exercises.reduce(
-    (total: number, exercise: any) => {
-      const setsVolume = (exercise.sets || []).reduce(
-        (setTotal: number, set: any) =>
-          setTotal + Number(set.weight || 0) * Number(set.reps || 0),
-        0
-      );
-
-      return total + setsVolume;
-    },
-    0
-  );
+  return sessionTonnage(session);
 }
 
 function summarize(sessions: any[]): RollupStats {
@@ -40,13 +33,15 @@ function summarize(sessions: any[]): RollupStats {
       (total, session) => total + sessionVolume(session),
       0
     ),
-    // Only cardio sessions carry a meaningful `duration` toward this -
-    // a lifting session's `duration` is its workout template's
-    // estimated length, not something to add up as "cardio time".
+    // Standalone cardio sessions contribute their `duration`; lifting
+    // sessions contribute only their attached warm-up/cool-down - a
+    // lifting session's own `duration` is lifting time, not cardio.
     cardioMinutes: sessions.reduce(
       (total, session) =>
         total +
-        (session.type === "cardio" ? Number(session.duration) || 0 : 0),
+        (session.type === "cardio"
+          ? Number(session.duration) || 0
+          : attachedCardioMinutes(session)),
       0
     ),
   };

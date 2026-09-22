@@ -20,3 +20,12 @@ export function saveSession(
     JSON.stringify(existing)
   );
 }
+
+/**
+ * Replaces the whole stored sessions list (newest first). Only used
+ * by utils/migrations.ts - everything else should add sessions one
+ * at a time through saveSession().
+ */
+export function saveAllSessions(sessions: WorkoutSession[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}

@@ -1,5 +1,12 @@
 import { getSessions } from "./sessionStorage";
 import { getTrackingType } from "./exerciseMeta";
+import { getPairs, isPairedRecord } from "./setFormat";
+import {
+  attachedCardioMinutes,
+  sessionTonnage,
+  sessionTimeUnderLoad,
+} from "./volume";
+import type { CardioBlock, SetData } from "../types/session";
 
 function formatSessionDate(dateValue: string) {
   const parsed = new Date(dateValue);
@@ -15,6 +22,25 @@ function formatSessionDate(dateValue: string) {
   });
 }
 
+function formatCardioBlock(block: CardioBlock): string {
+  return `${block.cardioType}, ${block.minutes} min, effort ${block.effort}/10`;
+}
+
+function formatSetLine(
+  set: SetData,
+  trackingType: "reps" | "duration"
+): string {
+  const weight = set.weight || "-";
+  const rpe = set.rpe || "-";
+
+  const secondValue =
+    trackingType === "duration"
+      ? `${set.reps || "-"}s`
+      : `${set.reps || "-"} reps`;
+
+  return `${weight}kg x ${secondValue} (RPE ${rpe})`;
+}
+
 function formatSessionText(session: any): string {
   const lines: string[] = [];
 
@@ -26,7 +52,14 @@ function formatSessionText(session: any): string {
   }
 
   lines.push(`Date: ${formatSessionDate(session.date)}`);
-  lines.push(`Duration: ${session.duration} min`);
+
+  const cardioMinutes = attachedCardioMinutes(session);
+
+  lines.push(
+    cardioMinutes > 0
+      ? `Duration: ${session.duration} min + ${cardioMinutes} min cardio`
+      : `Duration: ${session.duration} min`
+  );
 
   if (session.notes) {
     lines.push(`Notes: ${session.notes}`);
@@ -48,26 +81,44 @@ function formatSessionText(session: any): string {
     return lines.join("\n");
   }
 
+  if (session.warmUp) {
+    lines.push(`Warm-up: ${formatCardioBlock(session.warmUp)}`);
+  }
+
   lines.push("Exercises:");
 
   (session.exercises || []).forEach((exercise: any) => {
+    const trackingType = getTrackingType(exercise.name);
+    const sets: SetData[] = exercise.sets || [];
+
+    if (isPairedRecord(sets)) {
+      lines.push(`- ${exercise.name} (each side)`);
+
+      getPairs(sets).forEach((pair, index) => {
+        const left = pair.left ? `L ${formatSetLine(pair.left, trackingType)}` : "L -";
+        const right = pair.right ? `R ${formatSetLine(pair.right, trackingType)}` : "R -";
+        lines.push(`  Set ${index + 1}: ${left} / ${right}`);
+      });
+
+      return;
+    }
+
     lines.push(`- ${exercise.name}`);
 
-    const trackingType = getTrackingType(exercise.name);
-
-    (exercise.sets || []).forEach((set: any, index: number) => {
-      const weight = set.weight || "-";
-      const rpe = set.rpe || "-";
-
-      const secondValue =
-        trackingType === "duration"
-          ? `${set.reps || "-"}s`
-          : `${set.reps || "-"} reps`;
-
-      lines.push(
-        `  Set ${index + 1}: ${weight}kg x ${secondValue} (RPE ${rpe})`
-      );
+    sets.forEach((set, index) => {
+      lines.push(`  Set ${index + 1}: ${formatSetLine(set, trackingType)}`);
     });
+  });
+
+  if (session.coolDown) {
+    lines.push(`Cool-down: ${formatCardioBlock(session.coolDown)}`);
+  }
+
+  lines.push("");
+  lines.push(`Tonnage: ${(sessionTonnage(session) / 1000).toFixed(1)}t`);
+
+  sessionTimeUnderLoad(session).forEach((row) => {
+    lines.push(`Time under load: ${row.name} ${row.sets} (${row.totalText} total)`);
   });
 
   return lines.join("\n");

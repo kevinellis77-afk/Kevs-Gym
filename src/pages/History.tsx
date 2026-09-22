@@ -1,7 +1,11 @@
 import { useRef, useState } from "react";
 import { getSessions } from "../utils/sessionStorage";
-import { getTrackingType } from "../utils/exerciseMeta";
-import { sessionVolume } from "../utils/progressRollups";
+import { formatExerciseSets } from "../utils/setFormat";
+import {
+  attachedCardioMinutes,
+  sessionTonnage,
+  sessionTimeUnderLoad,
+} from "../utils/volume";
 import { downloadBackup, restoreBackup } from "../utils/dataBackup";
 import { ChevronRightIcon } from "../components/icons";
 
@@ -67,10 +71,24 @@ export default function History() {
     e.target.value = "";
   };
 
+  const formatCardio = (block: any) =>
+    `${block.cardioType} \u00b7 ${block.minutes} min \u00b7 Effort ${block.effort}/10`;
+
+  // "65 MIN" or "65 MIN + 15 MIN CARDIO" for a lifting session.
+  const formatLiftDuration = (session: any) => {
+    const cardio = attachedCardioMinutes(session);
+    return cardio > 0
+      ? `${session.duration} MIN + ${cardio} MIN CARDIO`
+      : `${session.duration} MIN`;
+  };
+
   return (
     <div className="app">
       <div className="screen-head">
         <h1 className="screen-title">History</h1>
+        {/* One per saved entry: every lifting workout plus any
+            cardio-only day. Warm-ups/cool-downs live inside their
+            workout, so they never add to this. */}
         <span className="screen-head-meta">
           {sessions.length} Sessions
         </span>
@@ -83,7 +101,8 @@ export default function History() {
       {sessions.map((session: any) => {
         const isExpanded = session.id === expandedId;
         const isCardio = session.type === "cardio";
-        const volume = sessionVolume(session);
+        const volume = sessionTonnage(session);
+        const timeUnderLoad = isCardio ? [] : sessionTimeUnderLoad(session);
         const liftCount = session.exercises?.length || 0;
 
         if (isExpanded) {
@@ -132,36 +151,55 @@ export default function History() {
                     </>
                   ) : (
                     <>
-                      {session.duration} MIN &middot; {liftCount} LIFTS
+                      {formatLiftDuration(session)} &middot; {liftCount} LIFTS
                       &middot; {(volume / 1000).toFixed(1)}t
                     </>
                   )}
                 </div>
               </div>
 
+              {!isCardio && session.warmUp && (
+                <div className="list-row">
+                  <span className="list-row-label">Warm-Up</span>
+                  <span className="set-log-value">
+                    {formatCardio(session.warmUp)}
+                  </span>
+                </div>
+              )}
+
               {!isCardio &&
                 session.exercises?.map(
-                (exercise: any, index: number) => {
-                  const trackingType = getTrackingType(exercise.name);
+                (exercise: any, index: number) => (
+                  <div key={index} className="list-row">
+                    <span className="list-row-label">
+                      {exercise.name}
+                    </span>
 
-                  return (
-                    <div key={index} className="list-row">
-                      <span className="list-row-label">
-                        {exercise.name}
-                      </span>
+                    <span className="set-log-value">
+                      {formatExerciseSets(exercise.name, exercise.sets || [])}
+                    </span>
+                  </div>
+                )
+              )}
 
-                      <span className="set-log-value">
-                        {(exercise.sets || [])
-                          .map((set: any) =>
-                            trackingType === "duration"
-                              ? `${set.weight}kg for ${set.reps}s`
-                              : `${set.weight}kg\u00d7${set.reps}`
-                          )
-                          .join(" \u00b7 ")}
-                      </span>
-                    </div>
-                  );
-                }
+              {!isCardio && session.coolDown && (
+                <div className="list-row">
+                  <span className="list-row-label">Cool-Down</span>
+                  <span className="set-log-value">
+                    {formatCardio(session.coolDown)}
+                  </span>
+                </div>
+              )}
+
+              {timeUnderLoad.length > 0 && (
+                <div className="list-row">
+                  <span className="list-row-label">Time Under Load</span>
+                  <span className="set-log-value">
+                    {timeUnderLoad
+                      .map((row) => `${row.name} ${row.totalText}`)
+                      .join(" \u00b7 ")}
+                  </span>
+                </div>
               )}
 
               {session.notes && (
@@ -200,7 +238,7 @@ export default function History() {
                     {session.workoutName
                       ? `${session.workoutName} \u00b7 `
                       : ""}
-                    {session.duration} MIN &middot;{" "}
+                    {formatLiftDuration(session)} &middot;{" "}
                     {(volume / 1000).toFixed(1)}t
                   </>
                 )}

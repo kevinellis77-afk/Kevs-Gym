@@ -15,7 +15,8 @@ export const workoutB = [
     id: "cablerow",
     name: "Cable Single-Arm Row",
     targetWeight: 20,
-    incrementKg: 2.5
+    incrementKg: 2.5,
+    unilateral: true
   },
   {
     id: "shoulderpress",
@@ -33,7 +34,8 @@ export const workoutB = [
     id: "woodchop",
     name: "Cable Woodchop",
     targetWeight: 15,
-    incrementKg: 2.5
+    incrementKg: 2.5,
+    unilateral: true
   },
   {
     id: "calfraise",

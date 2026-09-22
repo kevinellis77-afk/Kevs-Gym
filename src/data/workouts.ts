@@ -16,6 +16,10 @@ export type WorkoutExercise = {
   // isolation/single-joint lifts that shouldn't jump further than
   // that in one go. Bigger compound lower-body lifts use 5kg.
   incrementKg?: number;
+  // Done one side at a time (single-arm/single-leg, or a rotational
+  // move worked each way). Logged as left/right pairs - one "set" is
+  // left + right - see SetData.side in types/session.ts.
+  unilateral?: boolean;
 };
 
 export type WorkoutTemplate = {

@@ -1,5 +1,6 @@
 import { getSessions, saveSession } from "./sessionStorage";
 import { getHealthEntries, saveHealthEntry } from "./healthStorage";
+import { migrateStoredSessions } from "./migrations";
 
 type BackupFile = {
   version: 1;
@@ -48,6 +49,10 @@ export type RestoreResult = {
  * Restores from a backup file's raw text content. Merges by id
  * rather than overwriting - anything already present locally is
  * left alone, so importing the same backup twice is harmless.
+ *
+ * sessionsAdded counts sessions merged in from the file; a restored
+ * standalone cycling entry that then gets attached to a workout as
+ * its warm-up/cool-down still counts as added.
  */
 export function restoreBackup(fileContent: string): RestoreResult {
   let parsed: any;
@@ -92,6 +97,15 @@ export function restoreBackup(fileContent: string): RestoreResult {
       sessionsAdded++;
     }
   });
+
+  // A backup taken before warm-up/cool-down and left/right pairing
+  // existed brings back the old shapes - standalone cycling entries
+  // and unpaired unilateral sets. Re-running the (idempotent)
+  // migration brings them in line, and drops any cycling entry that's
+  // already attached to a workout rather than duplicating it.
+  if (sessionsAdded > 0) {
+    migrateStoredSessions();
+  }
 
   const existingHealthEntries = getHealthEntries();
   const existingHealthIds = new Set(

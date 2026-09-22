@@ -2,6 +2,7 @@ import { getSessions } from "../utils/sessionStorage";
 import { getExerciseStats } from "../utils/exerciseStats";
 import { getExerciseHistory } from "../utils/progressChartData";
 import { getTrackingType } from "../utils/exerciseMeta";
+import { formatExerciseSets } from "../utils/setFormat";
 import { ArrowLeftIcon } from "../components/icons";
 
 type Props = {
@@ -103,7 +104,10 @@ export default function ExerciseDetail({
             <div className="metric-cell">
               <span className="metric-label">Volume</span>
               <div className="metric-value-sm">
-                {(stats.volume / 1000).toFixed(1)}t
+                {/* Timed holds aren't counted in tonnage - see utils/volume.ts */}
+                {trackingType === "duration"
+                  ? "--"
+                  : `${(stats.volume / 1000).toFixed(1)}t`}
               </div>
             </div>
 
@@ -163,13 +167,7 @@ export default function ExerciseDetail({
               </span>
 
               <span className="set-log-value">
-                {row.sets
-                  .map((set: any) =>
-                    trackingType === "duration"
-                      ? `${set.weight}kg for ${set.reps}s`
-                      : `${set.weight}kg\u00d7${set.reps}`
-                  )
-                  .join(" \u00b7 ")}
+                {formatExerciseSets(name, row.sets)}
               </span>
             </div>
           ))}

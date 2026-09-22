@@ -45,6 +45,7 @@ export const workoutA = [
     id: "pallof",
     name: "Pallof Press",
     targetWeight: 12.5,
-    incrementKg: 2.5
+    incrementKg: 2.5,
+    unilateral: true
   }
 ];

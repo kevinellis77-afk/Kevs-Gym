@@ -5,11 +5,8 @@ import RestTimer from "./RestTimer";
 import { CheckIcon } from "./icons";
 import type { WorkoutExercise } from "../data/workouts";
 
-type SetData = {
-  weight: string;
-  reps: string;
-  rpe: string;
-};
+import { getPairs } from "../utils/setFormat";
+import type { SetData } from "../types/session";
 
 type Props = {
   name: string;
@@ -18,6 +15,9 @@ type Props = {
   // static exercise.targetWeight otherwise.
   targetWeight: number;
   trackingType?: "reps" | "duration";
+  // Done one side at a time - sets are logged as left then right,
+  // and one "set" is the pair. See SetData.side in types/session.ts.
+  unilateral?: boolean;
   // Sets already logged for this exercise this session, owned by
   // Workout.tsx's exerciseData state.
   sets: SetData[];
@@ -37,6 +37,7 @@ export default function ExerciseLogger({
   name,
   targetWeight,
   trackingType = "reps",
+  unilateral = false,
   sets,
   onChange,
   onInteract,
@@ -105,21 +106,56 @@ export default function ExerciseLogger({
     setShowSwap(false);
   };
 
+  // Unilateral: which side the next LOG SET records. Follows the last
+  // logged set rather than just counting, so it stays right even if
+  // the sets list ever has an odd one out.
+  const lastSide = sets.length > 0 ? sets[sets.length - 1].side : undefined;
+  const nextSide: "left" | "right" = lastSide === "left" ? "right" : "left";
+
+  // The set number shown on the button - for unilateral lifts that's
+  // the pair number, so left and right of the same set share it.
+  const pairs = unilateral ? getPairs(sets) : [];
+  const nextSetNumber = unilateral
+    ? nextSide === "right"
+      ? pairs.length
+      : pairs.length + 1
+    : sets.length + 1;
+
   const handleLogSet = () => {
     const newSet: SetData = {
       weight: String(weight),
       reps: String(reps),
       rpe: String(rpe),
+      ...(unilateral && { side: nextSide }),
     };
 
     onChange(name, [...sets, newSet]);
     onInteract?.(name);
-    setShowRest(true);
+
+    // Unilateral: rest only once both sides are done. Logging a left
+    // straight after a right means the rest was cut short, so close
+    // any timer still showing rather than leave it running over the
+    // next pair.
+    setShowRest(unilateral ? nextSide === "right" : true);
   };
+
+  const formatSetValue = (set: SetData) =>
+    trackingType === "duration"
+      ? `${set.weight}kg for ${set.reps}s`
+      : `${set.weight}kg \u00d7 ${set.reps}`;
 
   return (
     <>
       <h2 className="exercise-poster-title">{name}</h2>
+
+      {unilateral && (
+        <span
+          className="tag-outline-ink"
+          style={{ display: "inline-block", margin: "10px 0 0 16px" }}
+        >
+          Each Side &middot; Left Then Right
+        </span>
+      )}
 
       {isSubstituted && (
         <span
@@ -257,22 +293,37 @@ export default function ExerciseLogger({
         />
       )}
 
-      {sets.length > 0 &&
+      {!unilateral &&
         sets.map((set, index) => (
           <div key={index} className="list-row">
             <span className="set-log-label">Set {index + 1}</span>
 
             <span className="set-log-value">
-              {trackingType === "duration"
-                ? `${set.weight}kg for ${set.reps}s`
-                : `${set.weight}kg \u00d7 ${set.reps}`}
+              {formatSetValue(set)}
               {set.rpe && ` \u00b7 RPE ${set.rpe}`}
             </span>
           </div>
         ))}
 
+      {unilateral &&
+        pairs.map((pair, index) => (
+          <div key={index} className="list-row">
+            <span className="set-log-label">Set {index + 1}</span>
+
+            <span className="set-log-value">
+              {pair.left ? `L ${formatSetValue(pair.left)}` : "L \u2014"}
+              {" \u00b7 "}
+              {pair.right ? `R ${formatSetValue(pair.right)}` : "R \u2014"}
+              {pair.left &&
+                pair.right &&
+                ` \u00b7 RPE ${Math.max(Number(pair.left.rpe) || 0, Number(pair.right.rpe) || 0)}`}
+            </span>
+          </div>
+        ))}
+
       <button className="btn-primary" onClick={handleLogSet}>
-        Log Set {sets.length + 1}
+        Log Set {nextSetNumber}
+        {unilateral && (nextSide === "left" ? " \u00b7 Left" : " \u00b7 Right")}
         <CheckIcon />
       </button>
     </>
